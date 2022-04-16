@@ -1839,6 +1839,17 @@ void s1ap_handle_path_switch_request(
     mme_ue = enb_ue->mme_ue;
     ogs_expect_or_return(mme_ue);
 
+    if (!SECURITY_CONTEXT_IS_VALID(mme_ue)) {
+        ogs_error("No Security Context");
+        s1apbuf = s1ap_build_path_switch_failure(
+                *ENB_UE_S1AP_ID, *MME_UE_S1AP_ID,
+                S1AP_Cause_PR_nas, S1AP_CauseNas_authentication_failure);
+        ogs_expect_or_return(s1apbuf);
+
+        s1ap_send_to_enb_ue(enb_ue, s1apbuf);
+        return;
+    }
+
     ogs_info("    OLD TAI[PLMN_ID:%06x,TAC:%d]",
             ogs_plmn_id_hexdump(&mme_ue->tai.plmn_id),
             mme_ue->tai.tac);
@@ -1895,17 +1906,6 @@ void s1ap_handle_path_switch_request(
     eia0 = mme_ue->ue_network_capability.eia0;
     mme_ue->ue_network_capability.eia = eia >> 9;
     mme_ue->ue_network_capability.eia0 = eia0;
-
-    if (!SECURITY_CONTEXT_IS_VALID(mme_ue)) {
-        ogs_error("No Security Context");
-        s1apbuf = s1ap_build_path_switch_failure(
-                *ENB_UE_S1AP_ID, *MME_UE_S1AP_ID,
-                S1AP_Cause_PR_nas, S1AP_CauseNas_authentication_failure);
-        ogs_expect_or_return(s1apbuf);
-
-        s1ap_send_to_enb_ue(enb_ue, s1apbuf);
-        return;
-    }
 
     /* Update Security Context (NextHop) */
     mme_ue->nhcc++;
@@ -2211,17 +2211,18 @@ void s1ap_handle_handover_required(mme_enb_t *enb, ogs_s1ap_message_t *message)
     mme_ue = source_ue->mme_ue;
     ogs_expect_or_return(mme_ue);
 
-    source_ue->handover_type = *HandoverType;
-
-    if (SECURITY_CONTEXT_IS_VALID(mme_ue)) {
-        mme_ue->nhcc++;
-        ogs_kdf_nh_enb(mme_ue->kasme, mme_ue->nh, mme_ue->nh);
-    } else {
+    if (!SECURITY_CONTEXT_IS_VALID(mme_ue)) {
+        ogs_error("No Security Context");
         ogs_assert(OGS_OK ==
             s1ap_send_handover_preparation_failure(source_ue,
                 S1AP_Cause_PR_nas, S1AP_CauseNas_authentication_failure));
         return;
     }
+
+    source_ue->handover_type = *HandoverType;
+
+    mme_ue->nhcc++;
+    ogs_kdf_nh_enb(mme_ue->kasme, mme_ue->nh, mme_ue->nh);
 
     ogs_assert(OGS_OK ==
         s1ap_send_handover_request(
