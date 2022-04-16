@@ -88,12 +88,13 @@ void mme_s11_handle_create_session_response(
     mme_bearer_t *bearer = NULL;
     mme_sess_t *sess = NULL;
     mme_ue_t *mme_ue = mme_ue_from_teid;
+    sgw_ue_t *sgw_ue = NULL;
     ogs_session_t *session = NULL;
     ogs_gtp2_bearer_qos_t bearer_qos;
     ogs_gtp2_ambr_t *ambr = NULL;
     uint16_t decoded = 0;
     int create_action = 0;
-    
+
     ogs_assert(xact);
     create_action = xact->create_action;
     ogs_assert(rsp);
@@ -209,10 +210,13 @@ void mme_s11_handle_create_session_response(
     ogs_assert(sess);
     session = sess->session;
     ogs_assert(session);
+    ogs_assert(mme_ue);
+    sgw_ue = mme_ue->sgw_ue;
+    ogs_assert(sgw_ue);
 
     /* Control Plane(UL) : SGW-S11 */
     sgw_s11_teid = rsp->sender_f_teid_for_control_plane.data;
-    mme_ue->sgw_s11_teid = be32toh(sgw_s11_teid->teid);
+    sgw_ue->sgw_s11_teid = be32toh(sgw_s11_teid->teid);
 
     memcpy(&session->paa, rsp->pdn_address_allocation.data,
             rsp->pdn_address_allocation.len);
@@ -249,7 +253,7 @@ void mme_s11_handle_create_session_response(
     bearer->sgw_s1u_teid = be32toh(sgw_s1u_teid->teid);
 
     ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
-            mme_ue->mme_s11_teid, mme_ue->sgw_s11_teid);
+            sgw_ue->mme_s11_teid, sgw_ue->sgw_s11_teid);
     ogs_debug("    ENB_S1U_TEID[%d] SGW_S1U_TEID[%d]",
         bearer->enb_s1u_teid, bearer->sgw_s1u_teid);
 
@@ -288,6 +292,7 @@ void mme_s11_handle_modify_bearer_response(
     uint8_t cause_value = 0;
 
     mme_ue_t *mme_ue = mme_ue_from_teid;
+    sgw_ue_t *sgw_ue = NULL;
     mme_sess_t *sess = NULL;
     mme_bearer_t *bearer = NULL;
 
@@ -329,8 +334,12 @@ void mme_s11_handle_modify_bearer_response(
         return;
     }
 
+    ogs_assert(mme_ue);
+    sgw_ue = mme_ue->sgw_ue;
+    ogs_assert(sgw_ue);
+
     ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
-            mme_ue->mme_s11_teid, mme_ue->sgw_s11_teid);
+            sgw_ue->mme_s11_teid, sgw_ue->sgw_s11_teid);
 
     GTP_COUNTER_CHECK(mme_ue, GTP_COUNTER_MODIFY_BEARER_BY_PATH_SWITCH,
         ogs_assert(OGS_OK ==
@@ -351,6 +360,7 @@ void mme_s11_handle_delete_session_response(
     uint8_t cause_value = 0;
     int action = 0;
     mme_ue_t *mme_ue = mme_ue_from_teid;
+    sgw_ue_t *sgw_ue = NULL;
     mme_sess_t *sess = NULL;
 
     ogs_assert(xact);
@@ -364,6 +374,8 @@ void mme_s11_handle_delete_session_response(
     ogs_assert(sess);
     mme_ue = sess->mme_ue;
     ogs_assert(mme_ue);
+    sgw_ue = mme_ue->sgw_ue;
+    ogs_assert(sgw_ue);
 
     rv = ogs_gtp_xact_commit(xact);
     ogs_expect_or_return(rv == OGS_OK);
@@ -378,7 +390,7 @@ void mme_s11_handle_delete_session_response(
     }
 
     ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
-            mme_ue->mme_s11_teid, mme_ue->sgw_s11_teid);
+            sgw_ue->mme_s11_teid, sgw_ue->sgw_s11_teid);
 
     if (action == OGS_GTP_DELETE_SEND_AUTHENTICATION_REQUEST) {
         if (mme_sess_count(mme_ue) == 1) /* Last Session */ {
@@ -459,6 +471,7 @@ void mme_s11_handle_create_bearer_request(
     uint8_t cause_value = 0;
     mme_bearer_t *bearer = NULL, *default_bearer = NULL;
     mme_sess_t *sess = NULL;
+    sgw_ue_t *sgw_ue = NULL;
 
     ogs_gtp2_f_teid_t *sgw_s1u_teid = NULL;
     ogs_gtp2_bearer_qos_t bearer_qos;
@@ -506,13 +519,18 @@ void mme_s11_handle_create_bearer_request(
     }
 
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
-        ogs_gtp2_send_error_message(xact, mme_ue ? mme_ue->sgw_s11_teid : 0,
+        ogs_gtp2_send_error_message(xact,
+                mme_ue && mme_ue->sgw_ue ? mme_ue->sgw_ue->sgw_s11_teid : 0,
                 OGS_GTP2_CREATE_BEARER_RESPONSE_TYPE, cause_value);
         return;
     }
 
+    ogs_assert(mme_ue);
+    sgw_ue = mme_ue->sgw_ue;
+    ogs_assert(sgw_ue);
+
     ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
-            mme_ue->mme_s11_teid, mme_ue->sgw_s11_teid);
+            sgw_ue->mme_s11_teid, sgw_ue->sgw_s11_teid);
 
     /* Set PTI */
     ogs_assert(bearer);
@@ -596,6 +614,7 @@ void mme_s11_handle_update_bearer_request(
     uint8_t cause_value = 0;
     mme_bearer_t *bearer = NULL;
     mme_sess_t *sess = NULL;
+    sgw_ue_t *sgw_ue = NULL;
     ogs_gtp2_bearer_qos_t bearer_qos;
 
     ogs_assert(xact);
@@ -625,16 +644,20 @@ void mme_s11_handle_update_bearer_request(
     }
 
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
-        ogs_gtp2_send_error_message(xact, mme_ue ? mme_ue->sgw_s11_teid : 0,
+        ogs_gtp2_send_error_message(xact,
+                mme_ue && mme_ue->sgw_ue ? mme_ue->sgw_ue->sgw_s11_teid : 0,
                 OGS_GTP2_UPDATE_BEARER_RESPONSE_TYPE, cause_value);
         return;
     }
 
+    ogs_assert(mme_ue);
+    sgw_ue = mme_ue->sgw_ue;
+    ogs_assert(sgw_ue);
+
     ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
-            mme_ue->mme_s11_teid, mme_ue->sgw_s11_teid);
+            sgw_ue->mme_s11_teid, sgw_ue->sgw_s11_teid);
 
     /* Set PTI */
-    ogs_assert(mme_ue);
     ogs_assert(bearer);
     sess = bearer->sess;
     ogs_assert(sess);
@@ -713,6 +736,7 @@ void mme_s11_handle_delete_bearer_request(
 {
     mme_bearer_t *bearer = NULL;
     mme_sess_t *sess = NULL;
+    sgw_ue_t *sgw_ue = NULL;
 
     ogs_assert(xact);
     ogs_assert(req);
@@ -758,16 +782,19 @@ void mme_s11_handle_delete_bearer_request(
 
     if (!bearer) {
         ogs_error("No Context");
-        ogs_gtp2_send_error_message(xact, mme_ue ? mme_ue->sgw_s11_teid : 0,
+        ogs_gtp2_send_error_message(xact,
+                mme_ue && mme_ue->sgw_ue ? mme_ue->sgw_ue->sgw_s11_teid : 0,
                 OGS_GTP2_DELETE_BEARER_RESPONSE_TYPE,
                 OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND);
         return;
     }
 
     ogs_assert(mme_ue);
+    sgw_ue = mme_ue->sgw_ue;
+    ogs_assert(sgw_ue);
 
     ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
-            mme_ue->mme_s11_teid, mme_ue->sgw_s11_teid);
+            sgw_ue->mme_s11_teid, sgw_ue->sgw_s11_teid);
 
     /* Set PTI */
     ogs_assert(bearer);
@@ -808,6 +835,7 @@ void mme_s11_handle_release_access_bearers_response(
     enb_ue_t *enb_ue = NULL;
 
     mme_ue_t *mme_ue = mme_ue_from_teid;
+    sgw_ue_t *sgw_ue = NULL;
     mme_sess_t *sess = NULL;
     mme_bearer_t *bearer = NULL;
 
@@ -837,8 +865,11 @@ void mme_s11_handle_release_access_bearers_response(
     }
 
     ogs_assert(mme_ue);
+    sgw_ue = mme_ue->sgw_ue;
+    ogs_assert(sgw_ue);
+
     ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
-            mme_ue->mme_s11_teid, mme_ue->sgw_s11_teid);
+            sgw_ue->mme_s11_teid, sgw_ue->sgw_s11_teid);
 
     ogs_list_for_each(&mme_ue->sess_list, sess) {
         ogs_list_for_each(&sess->bearer_list, bearer) {
@@ -945,6 +976,7 @@ void mme_s11_handle_downlink_data_notification(
     uint8_t cause_value = 0;
 
     mme_bearer_t *bearer = NULL;
+    sgw_ue_t *sgw_ue = NULL;
 
     ogs_assert(xact);
     ogs_assert(noti);
@@ -976,16 +1008,20 @@ void mme_s11_handle_downlink_data_notification(
     }
 
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
-        ogs_gtp2_send_error_message(xact, mme_ue ? mme_ue->sgw_s11_teid : 0,
+        ogs_gtp2_send_error_message(xact,
+                mme_ue && mme_ue->sgw_ue ? mme_ue->sgw_ue->sgw_s11_teid : 0,
                 OGS_GTP2_DOWNLINK_DATA_NOTIFICATION_ACKNOWLEDGE_TYPE,
                 OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND);
         return;
     }
 
     ogs_assert(mme_ue);
+    sgw_ue = mme_ue->sgw_ue;
+    ogs_assert(sgw_ue);
     ogs_assert(bearer);
+
     ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
-            mme_ue->mme_s11_teid, mme_ue->sgw_s11_teid);
+            sgw_ue->mme_s11_teid, sgw_ue->sgw_s11_teid);
 
     /*
      * Save Transaction. It will be handled after ECM-Connected
@@ -1073,6 +1109,7 @@ void mme_s11_handle_create_indirect_data_forwarding_tunnel_response(
     int rv;
     uint8_t cause_value = 0;
     mme_ue_t *mme_ue = mme_ue_from_teid;
+    sgw_ue_t *sgw_ue = NULL;
     mme_bearer_t *bearer = NULL;
     enb_ue_t *source_ue = NULL;
     int i;
@@ -1103,8 +1140,11 @@ void mme_s11_handle_create_indirect_data_forwarding_tunnel_response(
     }
 
     ogs_assert(mme_ue);
+    sgw_ue = mme_ue->sgw_ue;
+    ogs_assert(sgw_ue);
+
     ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
-            mme_ue->mme_s11_teid, mme_ue->sgw_s11_teid);
+            sgw_ue->mme_s11_teid, sgw_ue->sgw_s11_teid);
 
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
         if (mme_ue_from_teid && mme_ue)
@@ -1118,7 +1158,7 @@ void mme_s11_handle_create_indirect_data_forwarding_tunnel_response(
             return;
         }
 
-        bearer = mme_bearer_find_by_ue_ebi(mme_ue, 
+        bearer = mme_bearer_find_by_ue_ebi(mme_ue,
                     rsp->bearer_contexts[i].eps_bearer_id.u8);
         ogs_expect_or_return(bearer);
 
@@ -1155,6 +1195,7 @@ void mme_s11_handle_delete_indirect_data_forwarding_tunnel_response(
     uint8_t cause_value = 0;
     int action = 0;
     mme_ue_t *mme_ue = mme_ue_from_teid;
+    sgw_ue_t *sgw_ue = NULL;
 
     ogs_assert(xact);
     action = xact->delete_indirect_action;
@@ -1187,8 +1228,12 @@ void mme_s11_handle_delete_indirect_data_forwarding_tunnel_response(
         return;
     }
 
+    ogs_assert(mme_ue);
+    sgw_ue = mme_ue->sgw_ue;
+    ogs_assert(sgw_ue);
+
     ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
-            mme_ue->mme_s11_teid, mme_ue->sgw_s11_teid);
+            sgw_ue->mme_s11_teid, sgw_ue->sgw_s11_teid);
 
     mme_ue_clear_indirect_tunnel(mme_ue);
 
@@ -1213,6 +1258,7 @@ void mme_s11_handle_bearer_resource_failure_indication(
     mme_bearer_t *bearer = NULL;
     mme_sess_t *sess = NULL;
     mme_ue_t *mme_ue = mme_ue_from_teid;
+    sgw_ue_t *sgw_ue = NULL;
 
     ogs_assert(xact);
     bearer = xact->data;
@@ -1241,8 +1287,11 @@ void mme_s11_handle_bearer_resource_failure_indication(
     }
 
     ogs_assert(mme_ue);
+    sgw_ue = mme_ue->sgw_ue;
+    ogs_assert(sgw_ue);
+
     ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
-            mme_ue->mme_s11_teid, mme_ue->sgw_s11_teid);
+            sgw_ue->mme_s11_teid, sgw_ue->sgw_s11_teid);
 
     ogs_assert(OGS_OK ==
         nas_eps_send_bearer_resource_modification_reject(
