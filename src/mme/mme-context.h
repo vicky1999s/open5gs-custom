@@ -289,7 +289,10 @@ struct sgw_ue_s {
     ogs_timer_t     *t_gtp2_holding;
 
     /* Related Context */
-    mme_sgw_t       *sgw;
+    union {
+        mme_sgw_t       *sgw;
+        ogs_gtp_node_t  *gnode;
+    };
     mme_ue_t        *mme_ue;
 };
 
@@ -534,10 +537,6 @@ struct mme_ue_s {
         uint8_t response;
     } gtp_counter[MAX_NUM_OF_GTP_COUNTER];
 
-    union {
-        mme_sgw_t       *sgw;
-        ogs_gtp_node_t  *gnode;
-    };
     mme_csmap_t     *csmap;
 };
 

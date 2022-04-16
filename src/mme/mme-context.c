@@ -2233,14 +2233,14 @@ mme_ue_t *mme_ue_add(enb_ue_t *enb_ue)
 
     /* setup GTP path with selected SGW */
     mme_self()->sgw = selected_sgw_node(mme_self()->sgw, enb_ue);
-
-    mme_ue->sgw = mme_self()->sgw;
-    ogs_assert(mme_ue->sgw);
-    ogs_assert(mme_ue->gnode);
-    ogs_debug("UE using SGW on IP[%s]", OGS_ADDR(mme_ue->gnode->sa_list, buf));
+    ogs_assert(mme_self()->sgw);
 
     sgw_ue = sgw_ue_add(mme_self()->sgw);
     ogs_assert(sgw_ue);
+    ogs_assert(sgw_ue->gnode);
+
+    ogs_debug("UE using SGW on IP[%s]",
+            OGS_ADDR(sgw_ue->gnode->sa_list, buf));
 
     mme_ue->sgw_ue = sgw_ue;
 

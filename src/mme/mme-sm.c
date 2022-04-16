@@ -554,8 +554,8 @@ void mme_state_operational(ogs_fsm_t *s, mme_event_t *e)
             mme_ue = mme_ue_find_by_teid(gtp_message.h.teid);
         }
 
-        if (mme_ue) {
-            gnode = mme_ue->gnode;
+        if (mme_ue && mme_ue->sgw_ue) {
+            gnode = mme_ue->sgw_ue->gnode;
             ogs_assert(gnode);
 
         } else {

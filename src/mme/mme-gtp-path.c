@@ -220,7 +220,7 @@ int mme_gtp_send_create_session_request(mme_sess_t *sess, int create_action)
     pkbuf = mme_s11_build_create_session_request(h.type, sess);
     ogs_expect_or_return_val(pkbuf, OGS_ERROR);
 
-    xact = ogs_gtp_xact_local_create(mme_ue->gnode, &h, pkbuf, timeout, sess);
+    xact = ogs_gtp_xact_local_create(sgw_ue->gnode, &h, pkbuf, timeout, sess);
     ogs_expect_or_return_val(xact, OGS_ERROR);
     xact->create_action = create_action;
 
@@ -254,7 +254,7 @@ int mme_gtp_send_modify_bearer_request(mme_bearer_t *bearer, int uli_presence)
     pkbuf = mme_s11_build_modify_bearer_request(h.type, bearer, uli_presence);
     ogs_expect_or_return_val(pkbuf, OGS_ERROR);
 
-    xact = ogs_gtp_xact_local_create(mme_ue->gnode, &h, pkbuf, timeout, bearer);
+    xact = ogs_gtp_xact_local_create(sgw_ue->gnode, &h, pkbuf, timeout, bearer);
     ogs_expect_or_return_val(xact, OGS_ERROR);
 
     rv = ogs_gtp_xact_commit(xact);
@@ -286,7 +286,7 @@ int mme_gtp_send_delete_session_request(mme_sess_t *sess, int action)
     s11buf = mme_s11_build_delete_session_request(h.type, sess);
     ogs_expect_or_return_val(s11buf, OGS_ERROR);
 
-    xact = ogs_gtp_xact_local_create(mme_ue->gnode, &h, s11buf, timeout, sess);
+    xact = ogs_gtp_xact_local_create(sgw_ue->gnode, &h, s11buf, timeout, sess);
     ogs_expect_or_return_val(xact, OGS_ERROR);
     xact->delete_action = action;
 
@@ -464,7 +464,7 @@ int mme_gtp_send_release_access_bearers_request(mme_ue_t *mme_ue, int action)
     pkbuf = mme_s11_build_release_access_bearers_request(h.type);
     ogs_expect_or_return_val(pkbuf, OGS_ERROR);
 
-    xact = ogs_gtp_xact_local_create(mme_ue->gnode, &h, pkbuf, timeout, mme_ue);
+    xact = ogs_gtp_xact_local_create(sgw_ue->gnode, &h, pkbuf, timeout, mme_ue);
     ogs_expect_or_return_val(xact, OGS_ERROR);
     xact->release_action = action;
 
@@ -559,7 +559,7 @@ int mme_gtp_send_create_indirect_data_forwarding_tunnel_request(
             h.type, mme_ue);
     ogs_expect_or_return_val(pkbuf, OGS_ERROR);
 
-    xact = ogs_gtp_xact_local_create(mme_ue->gnode, &h, pkbuf, timeout, mme_ue);
+    xact = ogs_gtp_xact_local_create(sgw_ue->gnode, &h, pkbuf, timeout, mme_ue);
     ogs_expect_or_return_val(xact, OGS_ERROR);
 
     rv = ogs_gtp_xact_commit(xact);
@@ -590,7 +590,7 @@ int mme_gtp_send_delete_indirect_data_forwarding_tunnel_request(
     ogs_expect_or_return_val(pkbuf, OGS_ERROR);
     ogs_pkbuf_reserve(pkbuf, OGS_TLV_MAX_HEADROOM);
 
-    xact = ogs_gtp_xact_local_create(mme_ue->gnode, &h, pkbuf, timeout, mme_ue);
+    xact = ogs_gtp_xact_local_create(sgw_ue->gnode, &h, pkbuf, timeout, mme_ue);
     ogs_expect_or_return_val(xact, OGS_ERROR);
     xact->delete_indirect_action = action;
 
@@ -624,7 +624,7 @@ int mme_gtp_send_bearer_resource_command(
     pkbuf = mme_s11_build_bearer_resource_command(h.type, bearer, nas_message);
     ogs_expect_or_return_val(pkbuf, OGS_ERROR);
 
-    xact = ogs_gtp_xact_local_create(mme_ue->gnode, &h, pkbuf, timeout, bearer);
+    xact = ogs_gtp_xact_local_create(sgw_ue->gnode, &h, pkbuf, timeout, bearer);
     ogs_expect_or_return_val(xact, OGS_ERROR);
     xact->xid |= OGS_GTP_CMD_XACT_ID;
 
