@@ -126,7 +126,7 @@ void s1ap_handle_s1_setup_request(mme_enb_t *enb, ogs_s1ap_message_t *message)
         S1AP_SupportedTAs_Item_t *SupportedTAs_Item = NULL;
         S1AP_TAC_t *tAC = NULL;
 
-        SupportedTAs_Item = 
+        SupportedTAs_Item =
             (S1AP_SupportedTAs_Item_t *)SupportedTAs->list.array[i];
         ogs_assert(SupportedTAs_Item);
         tAC = &SupportedTAs_Item->tAC;
@@ -140,7 +140,7 @@ void s1ap_handle_s1_setup_request(mme_enb_t *enb, ogs_s1ap_message_t *message)
 
             memcpy(&enb->supported_ta_list[enb->num_of_supported_ta_list].tac,
                     tAC->buf, sizeof(uint16_t));
-            enb->supported_ta_list[enb->num_of_supported_ta_list].tac = 
+            enb->supported_ta_list[enb->num_of_supported_ta_list].tac =
                 be16toh(enb->supported_ta_list
                         [enb->num_of_supported_ta_list].tac);
             memcpy(&enb->supported_ta_list
@@ -288,7 +288,7 @@ void s1ap_handle_initial_ue_message(mme_enb_t *enb, ogs_s1ap_message_t *message)
                         mme_ue->current.guti.mme_gid,
                         mme_ue->current.guti.mme_code,
                         mme_ue->current.guti.m_tmsi,
-                        MME_UE_HAVE_IMSI(mme_ue) 
+                        MME_UE_HAVE_IMSI(mme_ue)
                             ? mme_ue->imsi_bcd : "Unknown");
 
                 /* If NAS(mme_ue_t) has already been associated with
@@ -349,7 +349,7 @@ void s1ap_handle_initial_ue_message(mme_enb_t *enb, ogs_s1ap_message_t *message)
             sizeof(enb_ue->saved.tai.plmn_id));
     memcpy(&enb_ue->saved.tai.tac, tAC->buf, sizeof(enb_ue->saved.tai.tac));
     enb_ue->saved.tai.tac = be16toh(enb_ue->saved.tai.tac);
-    
+
     pLMNidentity = &EUTRAN_CGI->pLMNidentity;
     ogs_assert(pLMNidentity && pLMNidentity->size == sizeof(ogs_plmn_id_t));
     cell_ID = &EUTRAN_CGI->cell_ID;
@@ -1240,7 +1240,7 @@ void s1ap_handle_e_rab_setup_response(
             }
 
             ogs_debug("RAB_ID: %d", (int)item->e_RAB_ID);
-            ogs_debug("    Cause[Group:%d Cause:%d]", 
+            ogs_debug("    Cause[Group:%d Cause:%d]",
                 (int)item->cause.present, (int)item->cause.choice.radioNetwork);
         }
     }
@@ -1455,7 +1455,7 @@ void s1ap_handle_ue_context_release_action(enb_ue_t *enb_ue)
          * An assert occurs when a NAS message retransmission occurs.
          *
          * Because there is no `enb_ue` context.
-         * 
+         *
          * Therefore, before removing enb_ue, all Timers must be stopped
          * to prevent retransmission of NAS messages.
          */
@@ -1866,12 +1866,12 @@ void s1ap_handle_path_switch_request(
     ogs_info("    NEW ENB_UE_S1AP_ID[%d] MME_UE_S1AP_ID[%d]",
             enb_ue->enb_ue_s1ap_id, enb_ue->mme_ue_s1ap_id);
 
-    memcpy(&enb_ue->saved.tai.plmn_id, pLMNidentity->buf, 
+    memcpy(&enb_ue->saved.tai.plmn_id, pLMNidentity->buf,
             sizeof(enb_ue->saved.tai.plmn_id));
     memcpy(&enb_ue->saved.tai.tac, tAC->buf, sizeof(enb_ue->saved.tai.tac));
     enb_ue->saved.tai.tac = be16toh(enb_ue->saved.tai.tac);
 
-    memcpy(&enb_ue->saved.e_cgi.plmn_id, pLMNidentity->buf, 
+    memcpy(&enb_ue->saved.e_cgi.plmn_id, pLMNidentity->buf,
             sizeof(enb_ue->saved.e_cgi.plmn_id));
     memcpy(&enb_ue->saved.e_cgi.cell_id, cell_ID->buf,
             sizeof(enb_ue->saved.e_cgi.cell_id));
@@ -1946,7 +1946,7 @@ void s1ap_handle_path_switch_request(
             return;
         }
 
-        memcpy(&bearer->enb_s1u_teid, e_rab->gTP_TEID.buf, 
+        memcpy(&bearer->enb_s1u_teid, e_rab->gTP_TEID.buf,
                 sizeof(bearer->enb_s1u_teid));
         bearer->enb_s1u_teid = be32toh(bearer->enb_s1u_teid);
         rv = ogs_asn_BIT_STRING_to_ip(
@@ -2382,7 +2382,7 @@ void s1ap_handle_handover_request_ack(
             return;
         }
 
-        memcpy(&bearer->target_s1u_teid, e_rab->gTP_TEID.buf, 
+        memcpy(&bearer->target_s1u_teid, e_rab->gTP_TEID.buf,
                 sizeof(bearer->target_s1u_teid));
         bearer->target_s1u_teid = be32toh(bearer->target_s1u_teid);
         rv = ogs_asn_BIT_STRING_to_ip(
@@ -2400,7 +2400,7 @@ void s1ap_handle_handover_request_ack(
         if (e_rab->dL_transportLayerAddress && e_rab->dL_gTP_TEID) {
             ogs_assert(e_rab->dL_gTP_TEID->buf);
             ogs_assert(e_rab->dL_transportLayerAddress->buf);
-            memcpy(&bearer->enb_dl_teid, e_rab->dL_gTP_TEID->buf, 
+            memcpy(&bearer->enb_dl_teid, e_rab->dL_gTP_TEID->buf,
                     sizeof(bearer->enb_dl_teid));
             bearer->enb_dl_teid = be32toh(bearer->enb_dl_teid);
             rv = ogs_asn_BIT_STRING_to_ip(
@@ -2419,7 +2419,7 @@ void s1ap_handle_handover_request_ack(
         if (e_rab->uL_TransportLayerAddress && e_rab->uL_GTP_TEID) {
             ogs_assert(e_rab->uL_GTP_TEID->buf);
             ogs_assert(e_rab->uL_TransportLayerAddress->buf);
-            memcpy(&bearer->enb_ul_teid, e_rab->uL_GTP_TEID->buf, 
+            memcpy(&bearer->enb_ul_teid, e_rab->uL_GTP_TEID->buf,
                     sizeof(bearer->enb_ul_teid));
             bearer->enb_ul_teid = be32toh(bearer->enb_ul_teid);
             rv = ogs_asn_BIT_STRING_to_ip(
@@ -2879,13 +2879,13 @@ void s1ap_handle_handover_notification(
 
     mme_ue_associate_enb_ue(mme_ue, target_ue);
 
-    memcpy(&target_ue->saved.tai.plmn_id, pLMNidentity->buf, 
+    memcpy(&target_ue->saved.tai.plmn_id, pLMNidentity->buf,
             sizeof(target_ue->saved.tai.plmn_id));
     memcpy(&target_ue->saved.tai.tac,
             tAC->buf, sizeof(target_ue->saved.tai.tac));
     target_ue->saved.tai.tac = be16toh(target_ue->saved.tai.tac);
 
-    memcpy(&target_ue->saved.e_cgi.plmn_id, pLMNidentity->buf, 
+    memcpy(&target_ue->saved.e_cgi.plmn_id, pLMNidentity->buf,
             sizeof(target_ue->saved.e_cgi.plmn_id));
     memcpy(&target_ue->saved.e_cgi.cell_id, cell_ID->buf,
             sizeof(target_ue->saved.e_cgi.cell_id));

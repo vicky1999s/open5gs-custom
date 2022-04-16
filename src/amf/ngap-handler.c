@@ -1412,7 +1412,7 @@ void ngap_handle_ue_context_release_action(ran_ue_t *ran_ue)
          * An assert occurs when a NAS message retransmission occurs.
          *
          * Because there is no `ran_ue` context.
-         * 
+         *
          * Therefore, before removing `ran_ue`, all Timers must be stopped
          * to prevent retransmission of NAS messages.
          */
@@ -2260,7 +2260,7 @@ void ngap_handle_path_switch_request(
 
     NGAP_InitiatingMessage_t *initiatingMessage = NULL;
     NGAP_PathSwitchRequest_t *PathSwitchRequest = NULL;
-    
+
     NGAP_PathSwitchRequestIEs_t *ie = NULL;
     NGAP_RAN_UE_NGAP_ID_t *RAN_UE_NGAP_ID = NULL;
     NGAP_AMF_UE_NGAP_ID_t *AMF_UE_NGAP_ID = NULL;
@@ -2294,7 +2294,7 @@ void ngap_handle_path_switch_request(
     ogs_assert(PathSwitchRequest);
 
     ogs_info("PathSwitchRequest");
-    
+
     for (i = 0; i < PathSwitchRequest->protocolIEs.list.count; i++) {
         ie = PathSwitchRequest->protocolIEs.list.array[i];
         switch (ie->id) {
