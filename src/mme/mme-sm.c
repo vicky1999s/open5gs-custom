@@ -113,6 +113,7 @@ void mme_state_operational(ogs_fsm_t *s, mme_event_t *e)
 
     ogs_nas_eps_message_t nas_message;
     enb_ue_t *enb_ue = NULL;
+    sgw_ue_t *sgw_ue = NULL;
     mme_ue_t *mme_ue = NULL;
 
     mme_bearer_t *bearer = NULL;
@@ -551,16 +552,20 @@ void mme_state_operational(ogs_fsm_t *s, mme_event_t *e)
          */
         if (gtp_message.h.teid_presence && gtp_message.h.teid != 0) {
             /* Cause is not "Context not found" */
-            mme_ue = mme_ue_find_by_teid(gtp_message.h.teid);
+            sgw_ue = sgw_ue_find_by_mme_s11_teid(gtp_message.h.teid);
         }
 
-        if (mme_ue && mme_ue->sgw_ue) {
-            gnode = mme_ue->sgw_ue->gnode;
+        if (sgw_ue) {
+            gnode = sgw_ue->gnode;
             ogs_assert(gnode);
 
         } else {
             gnode = e->gnode;
             ogs_assert(gnode);
+        }
+
+        if (sgw_ue) {
+            mme_ue = sgw_ue->mme_ue;
         }
 
         rv = ogs_gtp_xact_receive(gnode, &gtp_message.h, &xact);

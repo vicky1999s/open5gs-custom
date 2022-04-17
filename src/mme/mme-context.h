@@ -745,7 +745,6 @@ void mme_ue_fsm_fini(mme_ue_t *mme_ue);
 mme_ue_t *mme_ue_find_by_imsi(uint8_t *imsi, int imsi_len);
 mme_ue_t *mme_ue_find_by_imsi_bcd(char *imsi_bcd);
 mme_ue_t *mme_ue_find_by_guti(ogs_nas_eps_guti_t *nas_guti);
-mme_ue_t *mme_ue_find_by_teid(uint32_t teid);
 
 mme_ue_t *mme_ue_find_by_message(ogs_nas_eps_message_t *message);
 int mme_ue_set_imsi(mme_ue_t *mme_ue, char *imsi_bcd);

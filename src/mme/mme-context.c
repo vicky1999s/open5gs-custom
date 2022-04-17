@@ -2239,7 +2239,7 @@ mme_ue_t *mme_ue_add(enb_ue_t *enb_ue)
     ogs_assert(sgw_ue);
     ogs_assert(sgw_ue->gnode);
 
-    mme_ue->sgw_ue = sgw_ue;
+    sgw_ue_associate_mme_ue(sgw_ue, mme_ue);
 
     ogs_debug("UE using SGW on IP[%s]", OGS_ADDR(sgw_ue->gnode->sa_list, buf));
 
@@ -2400,11 +2400,6 @@ mme_ue_t *mme_ue_find_by_guti(ogs_nas_eps_guti_t *guti)
 
     return (mme_ue_t *)ogs_hash_get(
             self.guti_ue_hash, guti, sizeof(ogs_nas_eps_guti_t));
-}
-
-mme_ue_t *mme_ue_find_by_teid(uint32_t teid)
-{
-    return ogs_pool_find(&mme_ue_pool, teid);
 }
 
 mme_ue_t *mme_ue_find_by_message(ogs_nas_eps_message_t *message)
