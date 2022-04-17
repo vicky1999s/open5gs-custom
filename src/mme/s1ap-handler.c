@@ -1484,7 +1484,7 @@ void s1ap_handle_ue_context_release_action(enb_ue_t *enb_ue)
     case S1AP_UE_CTX_REL_S1_HANDOVER_COMPLETE:
         ogs_debug("    Action: S1 handover complete");
 
-        enb_source_deassociate_target(enb_ue);
+        enb_ue_source_deassociate_target(enb_ue);
         enb_ue_remove(enb_ue);
 
         ogs_expect_or_return(mme_ue);
@@ -1502,7 +1502,7 @@ void s1ap_handle_ue_context_release_action(enb_ue_t *enb_ue)
     case S1AP_UE_CTX_REL_S1_HANDOVER_CANCEL:
         ogs_warn("    Action: S1 handover cancel");
 
-        enb_source_deassociate_target(enb_ue);
+        enb_ue_source_deassociate_target(enb_ue);
         enb_ue_remove(enb_ue);
 
         ogs_expect_or_return(mme_ue);
@@ -1524,7 +1524,7 @@ void s1ap_handle_ue_context_release_action(enb_ue_t *enb_ue)
     case S1AP_UE_CTX_REL_S1_HANDOVER_FAILURE:
         ogs_warn("    Action: S1 handover failure");
 
-        enb_source_deassociate_target(enb_ue);
+        enb_ue_source_deassociate_target(enb_ue);
         enb_ue_remove(enb_ue);
 
         ogs_expect_or_return(mme_ue);

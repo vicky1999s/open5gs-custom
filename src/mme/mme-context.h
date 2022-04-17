@@ -804,7 +804,7 @@ void enb_ue_associate_mme_ue(enb_ue_t *enb_ue, mme_ue_t *mme_ue);
 void enb_ue_deassociate(enb_ue_t *enb_ue);
 void enb_ue_unlink(mme_ue_t *mme_ue);
 void enb_ue_source_associate_target(enb_ue_t *source_ue, enb_ue_t *target_ue);
-void enb_source_deassociate_target(enb_ue_t *enb_ue);
+void enb_ue_source_deassociate_target(enb_ue_t *enb_ue);
 
 mme_sess_t *mme_sess_add(mme_ue_t *mme_ue, uint8_t pti);
 void mme_sess_remove(mme_sess_t *sess);

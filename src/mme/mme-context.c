@@ -2718,7 +2718,7 @@ void enb_ue_source_associate_target(enb_ue_t *source_ue, enb_ue_t *target_ue)
     source_ue->target_ue = target_ue;
 }
 
-void enb_source_deassociate_target(enb_ue_t *enb_ue)
+void enb_ue_source_deassociate_target(enb_ue_t *enb_ue)
 {
     enb_ue_t *source_ue = NULL;
     enb_ue_t *target_ue = NULL;
