@@ -984,9 +984,9 @@ void sgwc_s11_handle_release_access_bearers_request(
         ogs_pkbuf_t *gtpbuf, ogs_gtp2_message_t *message)
 {
     sgwc_sess_t *sess = NULL;
+    uint8_t cause_value;
 
     ogs_gtp2_release_access_bearers_request_t *req = NULL;
-    ogs_gtp2_cause_t cause;
 
     ogs_assert(s11_xact);
     ogs_assert(message);
@@ -995,21 +995,26 @@ void sgwc_s11_handle_release_access_bearers_request(
 
     ogs_debug("Release Access Bearers Request");
 
-    memset(&cause, 0, sizeof(cause));
-    cause.value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
+    /************************
+     * Check SGWC-UE Context
+     ************************/
+    cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
 
     if (!sgwc_ue) {
         ogs_error("No Context");
-        cause.value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
+        cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
     }
 
-    if (cause.value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+    if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
         ogs_gtp_send_error_message(
                 s11_xact, sgwc_ue ? sgwc_ue->mme_s11_teid : 0,
-                OGS_GTP2_RELEASE_ACCESS_BEARERS_RESPONSE_TYPE, cause.value);
+                OGS_GTP2_RELEASE_ACCESS_BEARERS_RESPONSE_TYPE, cause_value);
         return;
     }
 
+    /********************
+     * Check ALL Context
+     ********************/
     ogs_assert(sgwc_ue);
 
     ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
@@ -1037,23 +1042,25 @@ void sgwc_s11_handle_downlink_data_notification_ack(
 
     ogs_gtp2_downlink_data_notification_acknowledge_t *ack = NULL;
 
-    ogs_assert(s11_xact);
     ogs_assert(message);
     ack = &message->downlink_data_notification_acknowledge;
     ogs_assert(ack);
 
+    /********************
+     * Check Transaction
+     ********************/
+    ogs_assert(s11_xact);
     bearer = s11_xact->data;
     ogs_assert(bearer);
     sess = bearer->sess;
     ogs_assert(sess);
-    sgwc_ue = sess->sgwc_ue;
-    ogs_assert(sgwc_ue);
-
-    cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
 
     rv = ogs_gtp_xact_commit(s11_xact);
     ogs_expect(rv == OGS_OK);
 
+    /************************
+     * Check SGWC-UE Context
+     ************************/
     if (ack->cause.presence) {
         ogs_gtp2_cause_t *cause = ack->cause.data;
         ogs_assert(cause);
@@ -1067,8 +1074,10 @@ void sgwc_s11_handle_downlink_data_notification_ack(
     }
 
     ogs_debug("Downlink Data Notification Acknowledge");
-    ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
-        sgwc_ue->mme_s11_teid, sgwc_ue->sgw_s11_teid);
+    if (sgwc_ue) {
+        ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
+            sgwc_ue->mme_s11_teid, sgwc_ue->sgw_s11_teid);
+    }
 }
 
 void sgwc_s11_handle_create_indirect_data_forwarding_tunnel_request(
@@ -1083,8 +1092,8 @@ void sgwc_s11_handle_create_indirect_data_forwarding_tunnel_request(
     ogs_pfcp_far_t *far = NULL;
 
     ogs_gtp2_create_indirect_data_forwarding_tunnel_request_t *req = NULL;
-    ogs_gtp2_cause_t cause;
     ogs_gtp2_f_teid_t *req_teid = NULL;
+    uint8_t cause_value = 0;
 
     ogs_assert(s11_xact);
     ogs_assert(message);
@@ -1093,21 +1102,28 @@ void sgwc_s11_handle_create_indirect_data_forwarding_tunnel_request(
 
     ogs_debug("Create Indirect Data Forwarding Tunnel Request");
 
-    memset(&cause, 0, sizeof(cause));
-    cause.value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
+    /************************
+     * Check SGWC-UE Context
+     ************************/
+    cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
 
     if (!sgwc_ue) {
         ogs_error("No Context");
-        cause.value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
+        cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
     }
 
-    if (cause.value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+    if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
         ogs_gtp_send_error_message(
                 s11_xact, sgwc_ue ? sgwc_ue->mme_s11_teid : 0,
                 OGS_GTP2_CREATE_INDIRECT_DATA_FORWARDING_TUNNEL_RESPONSE_TYPE,
-                cause.value);
+                cause_value);
         return;
     }
+
+    /********************
+     * Check ALL Context
+     ********************/
+    ogs_assert(sgwc_ue);
 
     ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
         sgwc_ue->mme_s11_teid, sgwc_ue->sgw_s11_teid);
@@ -1212,29 +1228,33 @@ void sgwc_s11_handle_delete_indirect_data_forwarding_tunnel_request(
         ogs_pkbuf_t *gtpbuf, ogs_gtp2_message_t *recv_message)
 {
     sgwc_sess_t *sess = NULL;
-
-    ogs_gtp2_cause_t cause;
+    uint8_t cause_value = 0;
 
     ogs_assert(s11_xact);
 
     ogs_debug("Delete Indirect Data Forwarding Tunnel Request");
 
-    memset(&cause, 0, sizeof(cause));
-    cause.value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
+    /************************
+     * Check SGWC-UE Context
+     ************************/
+    cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
 
     if (!sgwc_ue) {
         ogs_error("No Context");
-        cause.value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
+        cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
     }
 
-    if (cause.value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+    if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
         ogs_gtp_send_error_message(
                 s11_xact, sgwc_ue ? sgwc_ue->mme_s11_teid : 0,
                 OGS_GTP2_DELETE_INDIRECT_DATA_FORWARDING_TUNNEL_RESPONSE_TYPE,
-                cause.value);
+                cause_value);
         return;
     }
 
+    /********************
+     * Check ALL Context
+     ********************/
     ogs_assert(sgwc_ue);
 
     ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
@@ -1266,45 +1286,33 @@ void sgwc_s11_handle_bearer_resource_command(
 
     ogs_assert(s11_xact);
     ogs_assert(message);
+    cmd = &message->bearer_resource_command;
+    ogs_assert(cmd);
 
     ogs_debug("Bearer Resource Command");
 
-    cmd = &message->bearer_resource_command;
+    /************************
+     * Check SGWC-UE Context
+     ************************/
     cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
-
-    if (cmd->procedure_transaction_id.presence == 0) {
-        ogs_error("No PTI");
-        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
-    }
-    if (cmd->traffic_aggregate_description.presence == 0) {
-        ogs_error("No Traffic aggregate description(TAD)");
-        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
-    }
-    if (cmd->linked_eps_bearer_id.presence == 0) {
-        ogs_error("No Linked EPS Bearer ID");
-        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
-    }
 
     if (!sgwc_ue) {
         ogs_error("No Context");
         cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
-    }
+    } else {
+        if (cmd->linked_eps_bearer_id.presence == 0) {
+            ogs_error("No Linked EPS Bearer ID");
+            cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
+        }
 
-    if (cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
-        uint8_t ebi = cmd->linked_eps_bearer_id.u8;
-
-        if (cmd->eps_bearer_id.presence)
-            ebi = cmd->eps_bearer_id.u8;
-
-        bearer = sgwc_bearer_find_by_ue_ebi(sgwc_ue, ebi);
-        if (!bearer)
-            ogs_error("No Context for Linked EPS Bearer ID[%d]",
-                    cmd->linked_eps_bearer_id.u8);
-    }
-
-    if (!bearer) {
-        ogs_error("No context");
-        cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
+        if (cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+            bearer = sgwc_bearer_find_by_ue_ebi(sgwc_ue, cmd->eps_bearer_id.u8);
+            if (!bearer) {
+                ogs_error("No Context for Linked EPS Bearer ID[%d]",
+                        cmd->linked_eps_bearer_id.u8);
+                cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
+            }
+        }
     }
 
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
@@ -1314,10 +1322,36 @@ void sgwc_s11_handle_bearer_resource_command(
         return;
     }
 
+    /*****************************************
+     * Check Mandatory/Conditional IE Missing
+     *****************************************/
+    ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
+
+    if (cmd->procedure_transaction_id.presence == 0) {
+        ogs_error("No PTI");
+        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
+    }
+    if (cmd->traffic_aggregate_description.presence == 0) {
+        ogs_error("No Traffic aggregate description(TAD)");
+        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
+    }
+
+    if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+        ogs_gtp_send_error_message(
+                s11_xact, sgwc_ue ? sgwc_ue->mme_s11_teid : 0,
+                OGS_GTP2_BEARER_RESOURCE_FAILURE_INDICATION_TYPE, cause_value);
+        return;
+    }
+
+    /********************
+     * Check ALL Context
+     ********************/
     ogs_assert(bearer);
     sess = bearer->sess;
     ogs_assert(sess);
     ogs_assert(sess->gnode);
+    ogs_assert(sgwc_ue);
+
     ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
         sgwc_ue->mme_s11_teid, sgwc_ue->sgw_s11_teid);
     ogs_debug("    SGW_S5C_TEID[0x%x] PGW_S5C_TEID[0x%x]",
