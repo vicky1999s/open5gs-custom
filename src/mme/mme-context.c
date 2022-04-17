@@ -2743,6 +2743,66 @@ void enb_ue_source_deassociate_target(enb_ue_t *enb_ue)
     }
 }
 
+void sgw_ue_associate_mme_ue(sgw_ue_t *sgw_ue, mme_ue_t *mme_ue)
+{
+    ogs_assert(mme_ue);
+    ogs_assert(sgw_ue);
+
+    mme_ue->sgw_ue = sgw_ue;
+    sgw_ue->mme_ue = mme_ue;
+}
+
+void sgw_ue_deassociate(sgw_ue_t *sgw_ue)
+{
+    ogs_assert(sgw_ue);
+    sgw_ue->mme_ue = NULL;
+}
+
+void sgw_ue_unlink(mme_ue_t *mme_ue)
+{
+    ogs_assert(mme_ue);
+    mme_ue->sgw_ue = NULL;
+}
+
+void sgw_ue_source_associate_target(sgw_ue_t *source_ue, sgw_ue_t *target_ue)
+{
+    mme_ue_t *mme_ue = NULL;
+
+    ogs_assert(source_ue);
+    ogs_assert(target_ue);
+    mme_ue = source_ue->mme_ue;
+    ogs_assert(mme_ue);
+
+    target_ue->mme_ue = mme_ue;
+    target_ue->source_ue = source_ue;
+    source_ue->target_ue = target_ue;
+}
+
+void sgw_ue_source_deassociate_target(sgw_ue_t *sgw_ue)
+{
+    sgw_ue_t *source_ue = NULL;
+    sgw_ue_t *target_ue = NULL;
+    ogs_assert(sgw_ue);
+
+    if (sgw_ue->target_ue) {
+        source_ue = sgw_ue;
+        target_ue = sgw_ue->target_ue;
+
+        ogs_assert(source_ue->target_ue);
+        ogs_assert(target_ue->source_ue);
+        source_ue->target_ue = NULL;
+        target_ue->source_ue = NULL;
+    } else if (sgw_ue->source_ue) {
+        target_ue = sgw_ue;
+        source_ue = sgw_ue->source_ue;
+
+        ogs_assert(source_ue->target_ue);
+        ogs_assert(target_ue->source_ue);
+        source_ue->target_ue = NULL;
+        target_ue->source_ue = NULL;
+    }
+}
+
 mme_sess_t *mme_sess_add(mme_ue_t *mme_ue, uint8_t pti)
 {
     mme_sess_t *sess = NULL;

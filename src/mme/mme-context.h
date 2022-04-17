@@ -273,6 +273,9 @@ struct sgw_ue_s {
     ogs_lnode_t     lnode;
     uint32_t        index;
 
+    sgw_ue_t        *source_ue;
+    sgw_ue_t        *target_ue;
+
     /* UE identity */
     uint32_t        mme_s11_teid;   /* MME-S11-TEID is derived from INDEX */
     uint32_t        sgw_s11_teid;   /* SGW-S11-TEID is received from SGW */
@@ -805,6 +808,12 @@ void enb_ue_deassociate(enb_ue_t *enb_ue);
 void enb_ue_unlink(mme_ue_t *mme_ue);
 void enb_ue_source_associate_target(enb_ue_t *source_ue, enb_ue_t *target_ue);
 void enb_ue_source_deassociate_target(enb_ue_t *enb_ue);
+
+void sgw_ue_associate_mme_ue(sgw_ue_t *sgw_ue, mme_ue_t *mme_ue);
+void sgw_ue_deassociate(sgw_ue_t *sgw_ue);
+void sgw_ue_unlink(mme_ue_t *mme_ue);
+void sgw_ue_source_associate_target(sgw_ue_t *source_ue, sgw_ue_t *target_ue);
+void sgw_ue_source_deassociate_target(sgw_ue_t *sgw_ue);
 
 mme_sess_t *mme_sess_add(mme_ue_t *mme_ue, uint8_t pti);
 void mme_sess_remove(mme_sess_t *sess);
