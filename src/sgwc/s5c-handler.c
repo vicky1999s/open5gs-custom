@@ -600,32 +600,33 @@ void sgwc_s5c_handle_update_bearer_request(
 
     ogs_debug("Update Bearer Request");
 
+    /************************
+     * Check Session Context
+     ************************/
     cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
-
-    if (req->bearer_contexts.presence == 0) {
-        ogs_error("No Bearer");
-        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
-    }
-    if (req->bearer_contexts.eps_bearer_id.presence == 0) {
-        ogs_error("No EPS Bearer ID");
-        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
-    }
 
     if (!sess) {
         ogs_error("No Context in TEID");
         cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
-    }
+    } else {
+        if (req->bearer_contexts.presence == 0) {
+            ogs_error("No Bearer");
+            cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
+        }
+        if (req->bearer_contexts.eps_bearer_id.presence == 0) {
+            ogs_error("No EPS Bearer ID");
+            cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
+        }
 
-    if (cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
-        bearer = sgwc_bearer_find_by_sess_ebi(
-                sess, req->bearer_contexts.eps_bearer_id.u8);
-        if (!bearer)
-            ogs_error("No Context for EPS Bearer ID[%d]",
+        if (cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+            bearer = sgwc_bearer_find_by_sess_ebi(sess,
                         req->bearer_contexts.eps_bearer_id.u8);
-    }
-    if (!bearer) {
-        ogs_error("No Context in TEID");
-        cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
+            if (!bearer) {
+                ogs_error("No Context for EPS Bearer ID[%d]",
+                        req->bearer_contexts.eps_bearer_id.u8);
+                cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
+            }
+        }
     }
 
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
@@ -634,6 +635,9 @@ void sgwc_s5c_handle_update_bearer_request(
         return;
     }
 
+    /********************
+     * Check ALL Context
+     ********************/
     ogs_assert(sess);
     ogs_assert(bearer);
     sgwc_ue = sess->sgwc_ue;
@@ -689,59 +693,64 @@ void sgwc_s5c_handle_delete_bearer_request(
 
     ogs_debug("Delete Bearer Request");
 
+    /************************
+     * Check Session Context
+     ************************/
     cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
-
-    if (req->linked_eps_bearer_id.presence == 0 &&
-        req->eps_bearer_ids.presence == 0) {
-        ogs_error("No Linked EBI or EPS Bearer ID");
-        cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
-    }
 
     if (!sess) {
         ogs_error("No Context in TEID");
         cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
-    }
+    } else {
+        if (req->linked_eps_bearer_id.presence == 0 &&
+            req->eps_bearer_ids.presence == 0) {
+            ogs_error("No Linked EBI or EPS Bearer ID");
+            cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
+        }
 
-    if (cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
-        uint8_t ebi;
+        if (cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+            uint8_t ebi;
 
-        if (req->linked_eps_bearer_id.presence) {
-           /*
-            * << Linked EPS Bearer ID >>
-            *
-            * 1. SMF sends Delete Bearer Request(DEFAULT BEARER) to SGW/MME.
-            * 2. MME sends Delete Bearer Response to SGW/SMF.
-            *
-            * OR
-            *
-            * 1. SMF sends Delete Bearer Request(DEFAULT BEARER) to ePDG.
-            * 2. ePDG sends Delete Bearer Response(DEFAULT BEARER) to SMF.
-            */
-            ebi = req->linked_eps_bearer_id.u8;
-        } else if (req->eps_bearer_ids.presence) {
-           /*
-            * << EPS Bearer IDs >>
-            *
-            * 1. MME sends Bearer Resource Command to SGW/SMF.
-            * 2. SMF sends Delete Bearer Request(DEDICATED BEARER) to SGW/MME.
-            * 3. MME sends Delete Bearer Response(DEDICATED BEARER) to SGW/SMF.
-            *
-            * OR
-            *
-            * 1. SMF sends Delete Bearer Request(DEDICATED BEARER) to SGW/MME.
-            * 2. MME sends Delete Bearer Response(DEDICATED BEARER) to SGW/SMF.
-            */
-            ebi = req->eps_bearer_ids.u8;
-        } else
-            ogs_assert_if_reached();
+            if (req->linked_eps_bearer_id.presence) {
+               /*
+                * << Linked EPS Bearer ID >>
+                *
+                * 1. SMF sends Delete Bearer Request(DEFAULT BEARER) to SGW/MME.
+                * 2. MME sends Delete Bearer Response to SGW/SMF.
+                *
+                * OR
+                *
+                * 1. SMF sends Delete Bearer Request(DEFAULT BEARER) to ePDG.
+                * 2. ePDG sends Delete Bearer Response(DEFAULT BEARER) to SMF.
+                */
+                ebi = req->linked_eps_bearer_id.u8;
+            } else if (req->eps_bearer_ids.presence) {
+               /*
+                * << EPS Bearer IDs >>
+                *
+                * 1. MME sends Bearer Resource Command to SGW/SMF.
+                * 2. SMF sends Delete Bearer Request(DEDICATED BEARER)
+                *    to SGW/MME.
+                * 3. MME sends Delete Bearer Response(DEDICATED BEARER)
+                *    to SGW/SMF.
+                *
+                * OR
+                *
+                * 1. SMF sends Delete Bearer Request(DEDICATED BEARER)
+                *    to SGW/MME.
+                * 2. MME sends Delete Bearer Response(DEDICATED BEARER)
+                *    to SGW/SMF.
+                */
+                ebi = req->eps_bearer_ids.u8;
+            } else
+                ogs_assert_if_reached();
 
-        bearer = sgwc_bearer_find_by_sess_ebi(sess, ebi);
-        if (!bearer)
-            ogs_error("No Context for EPS Bearer ID[%d]", ebi);
-    }
-    if (!bearer) {
-        ogs_error("No Context in TEID");
-        cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
+            bearer = sgwc_bearer_find_by_sess_ebi(sess, ebi);
+            if (!bearer) {
+                ogs_error("No Context for EPS Bearer ID[%d]", ebi);
+                cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
+            }
+        }
     }
 
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
@@ -750,6 +759,9 @@ void sgwc_s5c_handle_delete_bearer_request(
         return;
     }
 
+    /********************
+     * Check ALL Context
+     ********************/
     ogs_assert(sess);
     ogs_assert(bearer);
     sgwc_ue = sess->sgwc_ue;
