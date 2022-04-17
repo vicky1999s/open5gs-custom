@@ -99,6 +99,9 @@ void sgwc_s5c_handle_create_session_response(
 
         cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
     } else {
+        sgwc_ue = sess->sgwc_ue;
+        ogs_assert(sgwc_ue);
+
         if (rsp->bearer_contexts_created.presence == 0) {
             ogs_error("No Bearer");
             cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
@@ -121,9 +124,6 @@ void sgwc_s5c_handle_create_session_response(
 
     rv = ogs_gtp_xact_commit(s5c_xact);
     ogs_expect(rv == OGS_OK);
-
-    sgwc_ue = sess->sgwc_ue;
-    ogs_assert(sgwc_ue);
 
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
         ogs_gtp_send_error_message(
@@ -209,6 +209,11 @@ void sgwc_s5c_handle_create_session_response(
         return;
     }
 
+    /********************
+     * Check ALL Context
+     ********************/
+    ogs_assert(sgwc_ue);
+    ogs_assert(sess);
     ogs_assert(bearer);
     ul_tunnel = sgwc_ul_tunnel_in_bearer(bearer);
     ogs_assert(ul_tunnel);
@@ -288,13 +293,13 @@ void sgwc_s5c_handle_delete_session_response(
         ogs_assert(sess);
 
         cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
+    } else {
+        sgwc_ue = sess->sgwc_ue;
+        ogs_assert(sgwc_ue);
     }
 
     rv = ogs_gtp_xact_commit(s5c_xact);
     ogs_expect(rv == OGS_OK);
-
-    sgwc_ue = sess->sgwc_ue;
-    ogs_assert(sgwc_ue);
 
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
         ogs_gtp_send_error_message(
@@ -335,6 +340,12 @@ void sgwc_s5c_handle_delete_session_response(
                 OGS_GTP2_DELETE_SESSION_RESPONSE_TYPE, cause_value);
         return;
     }
+
+    /********************
+     * Check ALL Context
+     ********************/
+    ogs_assert(sgwc_ue);
+    ogs_assert(sess);
 
     /* Remove a pgw session */
     ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
@@ -384,13 +395,13 @@ void sgwc_s5c_handle_modify_bearer_response(
         ogs_assert(sess);
 
         cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
+    } else {
+        sgwc_ue = sess->sgwc_ue;
+        ogs_assert(sgwc_ue);
     }
 
     rv = ogs_gtp_xact_commit(s5c_xact);
     ogs_expect(rv == OGS_OK);
-
-    sgwc_ue = sess->sgwc_ue;
-    ogs_assert(sgwc_ue);
 
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
         ogs_gtp_send_error_message(
@@ -432,6 +443,12 @@ void sgwc_s5c_handle_modify_bearer_response(
         return;
     }
 
+    /********************
+     * Check ALL Context
+     ********************/
+    ogs_assert(sgwc_ue);
+    ogs_assert(sess);
+
     ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
         sgwc_ue->mme_s11_teid, sgwc_ue->sgw_s11_teid);
     ogs_debug("    SGW_S5C_TEID[0x%x] PGW_S5C_TEID[0x%x]",
@@ -472,7 +489,26 @@ void sgwc_s5c_handle_create_bearer_request(
 
     ogs_debug("Create Bearer Request");
 
+    /************************
+     * Check Session Context
+     ************************/
     cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
+
+    if (!sess) {
+        ogs_warn("No Context");
+        cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
+    }
+
+    if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+        ogs_gtp_send_error_message(s5c_xact, sess ? sess->pgw_s5c_teid : 0,
+                OGS_GTP2_CREATE_BEARER_RESPONSE_TYPE, cause_value);
+        return;
+    }
+
+    /****************************************
+     * Check Manatory/Conditional IE Missing
+     ****************************************/
+    ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
 
     if (req->linked_eps_bearer_id.presence == 0) {
         ogs_error("No Linked EBI");
@@ -491,17 +527,16 @@ void sgwc_s5c_handle_create_bearer_request(
         cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
     }
 
-    if (!sess) {
-        ogs_warn("No Context");
-        cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
-    }
-
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
         ogs_gtp_send_error_message(s5c_xact, sess ? sess->pgw_s5c_teid : 0,
                 OGS_GTP2_CREATE_BEARER_RESPONSE_TYPE, cause_value);
         return;
     }
 
+    /********************
+     * Check ALL Context
+     ********************/
+    ogs_assert(sess);
     sgwc_ue = sess->sgwc_ue;
     ogs_assert(sgwc_ue);
 
