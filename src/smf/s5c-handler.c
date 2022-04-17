@@ -960,14 +960,49 @@ void smf_s5c_handle_bearer_resource_command(
     int tft_delete = 0;
 
     ogs_assert(xact);
-    ogs_assert(sess);
     ogs_assert(cmd);
 
-    ogs_debug("[PGW] Bearer Resource Command");
-    ogs_debug("    SGW_S5C_TEID[0x%x] PGW_S5C_TEID[0x%x]",
-            sess->sgw_s5c_teid, sess->smf_n4_teid);
+    ogs_debug("Bearer Resource Command");
 
+    /************************
+     * Check Session Context
+     ************************/
     cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
+
+    if (!sess) {
+        ogs_error("No Context");
+        cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
+    } else {
+        if (cmd->linked_eps_bearer_id.presence == 0) {
+            ogs_error("No EPS Bearer ID");
+            cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
+        }
+
+        if (cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+            uint8_t ebi = cmd->linked_eps_bearer_id.u8;
+
+            if (cmd->eps_bearer_id.presence)
+                ebi = cmd->eps_bearer_id.u8;
+
+            bearer = smf_bearer_find_by_ebi(sess, ebi);
+            if (!bearer) {
+                ogs_error("No Context for Linked EPS Bearer ID[%d:%d]",
+                        cmd->linked_eps_bearer_id.u8, ebi);
+                cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
+            }
+        }
+    }
+
+    if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+        ogs_gtp2_send_error_message(xact, sess ? sess->sgw_s5c_teid : 0,
+                OGS_GTP2_BEARER_RESOURCE_FAILURE_INDICATION_TYPE, cause_value);
+        return;
+    }
+
+    /*****************************************
+     * Check Mandatory/Conditional IE Missing
+     *****************************************/
+    ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
 
     if (cmd->procedure_transaction_id.presence == 0) {
         ogs_error("No PTI");
@@ -983,35 +1018,20 @@ void smf_s5c_handle_bearer_resource_command(
         cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
     }
 
-    if (!sess) {
-        ogs_error("No Context");
-        cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
-    }
-
-    if (cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
-        uint8_t ebi = cmd->linked_eps_bearer_id.u8;
-
-        if (cmd->eps_bearer_id.presence)
-            ebi = cmd->eps_bearer_id.u8;
-
-        bearer = smf_bearer_find_by_ebi(sess, ebi);
-        if (!bearer)
-            ogs_error("No Context for Linked EPS Bearer ID[%d]",
-                    cmd->linked_eps_bearer_id.u8);
-    }
-
-    if (!bearer) {
-        ogs_error("No Context");
-        cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
-    }
-
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
         ogs_gtp2_send_error_message(xact, sess ? sess->sgw_s5c_teid : 0,
                 OGS_GTP2_BEARER_RESOURCE_FAILURE_INDICATION_TYPE, cause_value);
         return;
     }
 
+    /********************
+     * Check ALL Context
+     ********************/
     ogs_assert(bearer);
+    ogs_assert(sess);
+
+    ogs_debug("    SGW_S5C_TEID[0x%x] PGW_S5C_TEID[0x%x]",
+            sess->sgw_s5c_teid, sess->smf_n4_teid);
 
     decoded = ogs_gtp2_parse_tft(&tft, &cmd->traffic_aggregate_description);
     ogs_assert(cmd->traffic_aggregate_description.len == decoded);
