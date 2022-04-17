@@ -77,15 +77,22 @@ void sgwc_s5c_handle_create_session_response(
     ogs_gtp2_create_session_response_t *rsp = NULL;
     ogs_gtp_xact_t *s11_xact = NULL;
 
-    ogs_assert(s5c_xact);
-    s11_xact = s5c_xact->assoc_xact;
-    ogs_assert(s11_xact);
     ogs_assert(gtpbuf);
     ogs_assert(message);
     rsp = &message->create_session_response;
     ogs_assert(rsp);
 
     ogs_debug("Create Session Response");
+
+    /********************
+     * Check Transaction
+     ********************/
+    ogs_assert(s5c_xact);
+    s11_xact = s5c_xact->assoc_xact;
+    ogs_assert(s11_xact);
+
+    rv = ogs_gtp_xact_commit(s5c_xact);
+    ogs_expect(rv == OGS_OK);
 
     /************************
      * Check Session Context
@@ -119,9 +126,6 @@ void sgwc_s5c_handle_create_session_response(
         }
     }
 
-    rv = ogs_gtp_xact_commit(s5c_xact);
-    ogs_expect(rv == OGS_OK);
-
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
         ogs_gtp_send_error_message(
                 s11_xact, sgwc_ue ? sgwc_ue->mme_s11_teid : 0,
@@ -129,9 +133,9 @@ void sgwc_s5c_handle_create_session_response(
         return;
     }
 
-    /****************************************
-     * Check Manatory/Conditional IE Missing
-     ****************************************/
+    /*****************************************
+     * Check Mandatory/Conditional IE Missing
+     *****************************************/
     ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
 
     if (rsp->cause.presence == 0) {
@@ -270,14 +274,21 @@ void sgwc_s5c_handle_delete_session_response(
     ogs_gtp_xact_t *s11_xact = NULL;
     ogs_gtp2_delete_session_response_t *rsp = NULL;
 
-    ogs_assert(s5c_xact);
-    s11_xact = s5c_xact->assoc_xact;
-    ogs_assert(s11_xact);
     ogs_assert(message);
     rsp = &message->delete_session_response;
     ogs_assert(rsp);
 
     ogs_debug("Delete Session Response");
+
+    /********************
+     * Check Transaction
+     ********************/
+    ogs_assert(s5c_xact);
+    s11_xact = s5c_xact->assoc_xact;
+    ogs_assert(s11_xact);
+
+    rv = ogs_gtp_xact_commit(s5c_xact);
+    ogs_expect(rv == OGS_OK);
 
     /************************
      * Check Session Context
@@ -292,9 +303,6 @@ void sgwc_s5c_handle_delete_session_response(
         ogs_assert(sgwc_ue);
     }
 
-    rv = ogs_gtp_xact_commit(s5c_xact);
-    ogs_expect(rv == OGS_OK);
-
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
         ogs_gtp_send_error_message(
                 s11_xact, sgwc_ue ? sgwc_ue->mme_s11_teid : 0,
@@ -302,9 +310,9 @@ void sgwc_s5c_handle_delete_session_response(
         return;
     }
 
-    /****************************************
-     * Check Manatory/Conditional IE Missing
-     ****************************************/
+    /*****************************************
+     * Check Mandatory/Conditional IE Missing
+     *****************************************/
     ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
 
     if (rsp->cause.presence == 0) {
@@ -338,8 +346,8 @@ void sgwc_s5c_handle_delete_session_response(
     /********************
      * Check ALL Context
      ********************/
-    ogs_assert(sgwc_ue);
     ogs_assert(sess);
+    ogs_assert(sgwc_ue);
 
     /* Remove a pgw session */
     ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
@@ -369,14 +377,21 @@ void sgwc_s5c_handle_modify_bearer_response(
     ogs_gtp_xact_t *s11_xact = NULL;
     ogs_gtp2_modify_bearer_response_t *rsp = NULL;
 
-    ogs_assert(s5c_xact);
-    s11_xact = s5c_xact->assoc_xact;
-    ogs_assert(s11_xact);
     ogs_assert(message);
     rsp = &message->modify_bearer_response;
     ogs_assert(rsp);
 
     ogs_debug("Modify Bearer Response");
+
+    /********************
+     * Check Transaction
+     ********************/
+    ogs_assert(s5c_xact);
+    s11_xact = s5c_xact->assoc_xact;
+    ogs_assert(s11_xact);
+
+    rv = ogs_gtp_xact_commit(s5c_xact);
+    ogs_expect(rv == OGS_OK);
 
     /************************
      * Check Session Context
@@ -391,9 +406,6 @@ void sgwc_s5c_handle_modify_bearer_response(
         ogs_assert(sgwc_ue);
     }
 
-    rv = ogs_gtp_xact_commit(s5c_xact);
-    ogs_expect(rv == OGS_OK);
-
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
         ogs_gtp_send_error_message(
                 s11_xact, sgwc_ue ? sgwc_ue->mme_s11_teid : 0,
@@ -401,9 +413,9 @@ void sgwc_s5c_handle_modify_bearer_response(
         return;
     }
 
-    /****************************************
-     * Check Manatory/Conditional IE Missing
-     ****************************************/
+    /*****************************************
+     * Check Mandatory/Conditional IE Missing
+     *****************************************/
     ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
 
     if (rsp->cause.presence == 0) {
@@ -473,12 +485,16 @@ void sgwc_s5c_handle_create_bearer_request(
     ogs_gtp2_create_bearer_request_t *req = NULL;
     ogs_gtp2_f_teid_t *pgw_s5u_teid = NULL;
 
-    ogs_assert(s5c_xact);
     ogs_assert(message);
     req = &message->create_bearer_request;
     ogs_assert(req);
 
     ogs_debug("Create Bearer Request");
+
+    /********************
+     * Check Transaction
+     ********************/
+    ogs_assert(s5c_xact);
 
     /************************
      * Check Session Context
@@ -496,9 +512,9 @@ void sgwc_s5c_handle_create_bearer_request(
         return;
     }
 
-    /****************************************
-     * Check Manatory/Conditional IE Missing
-     ****************************************/
+    /*****************************************
+     * Check Mandatory/Conditional IE Missing
+     *****************************************/
     ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
 
     if (req->linked_eps_bearer_id.presence == 0) {
@@ -584,12 +600,16 @@ void sgwc_s5c_handle_update_bearer_request(
     sgwc_ue_t *sgwc_ue = NULL;
     sgwc_bearer_t *bearer = NULL;
 
-    ogs_assert(s5c_xact);
     ogs_assert(message);
     req = &message->update_bearer_request;
     ogs_assert(req);
 
     ogs_debug("Update Bearer Request");
+
+    /********************
+     * Check Transaction
+     ********************/
+    ogs_assert(s5c_xact);
 
     /************************
      * Check Session Context
@@ -677,12 +697,16 @@ void sgwc_s5c_handle_delete_bearer_request(
     sgwc_ue_t *sgwc_ue = NULL;
     sgwc_bearer_t *bearer = NULL;
 
-    ogs_assert(s5c_xact);
     ogs_assert(message);
     req = &message->delete_bearer_request;
     ogs_assert(req);
 
     ogs_debug("Delete Bearer Request");
+
+    /********************
+     * Check Transaction
+     ********************/
+    ogs_assert(s5c_xact);
 
     /************************
      * Check Session Context
@@ -816,15 +840,22 @@ void sgwc_s5c_handle_bearer_resource_failure_indication(
 
     sgwc_ue_t *sgwc_ue = NULL;
 
-    ogs_assert(s5c_xact);
-    s11_xact = s5c_xact->assoc_xact;
-    ogs_assert(s11_xact);
     ogs_assert(message);
     ind = &message->bearer_resource_failure_indication;
     ogs_assert(ind);
 
     ogs_debug("Bearer Resource Failure Indication");
 
+    /********************
+     * Check Transaction
+     ********************/
+    ogs_assert(s5c_xact);
+    s11_xact = s5c_xact->assoc_xact;
+    ogs_assert(s11_xact);
+
+    /************************
+     * Check Session Context
+     ************************/
     if (!sess) {
         ogs_error("No Context in TEID");
         cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
@@ -833,6 +864,9 @@ void sgwc_s5c_handle_bearer_resource_failure_indication(
         ogs_assert(sgwc_ue);
     }
 
+    /********************
+     * Check Cause Value
+     ********************/
     if (ind->cause.presence) {
         ogs_gtp2_cause_t *cause = ind->cause.data;
         ogs_assert(cause);

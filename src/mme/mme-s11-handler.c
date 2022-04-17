@@ -88,7 +88,7 @@ void mme_s11_handle_create_session_response(
 
     mme_bearer_t *bearer = NULL;
     mme_sess_t *sess = NULL;
-    mme_ue_t *mme_ue = mme_ue_from_teid;
+    mme_ue_t *mme_ue = NULL;
     sgw_ue_t *sgw_ue = NULL;
     ogs_session_t *session = NULL;
     ogs_gtp2_bearer_qos_t bearer_qos;
@@ -102,18 +102,24 @@ void mme_s11_handle_create_session_response(
 
     ogs_debug("Create Session Response");
 
+    /********************
+     * Check Transaction
+     ********************/
+    sess = xact->data;
+    ogs_assert(sess);
+    mme_ue = sess->mme_ue;
+    ogs_assert(mme_ue);
+
+    rv = ogs_gtp_xact_commit(xact);
+    ogs_expect_or_return(rv == OGS_OK);
+
     /************************
-     * Check Session Context
+     * Check SGW-UE Context
      ************************/
     cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
 
-    if (!mme_ue) {
+    if (!mme_ue_from_teid) {
         ogs_error("No Context in TEID");
-        sess = xact->data;
-        ogs_assert(sess);
-        mme_ue = sess->mme_ue;
-        ogs_assert(mme_ue);
-
         cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
     } else {
         if (rsp->bearer_contexts_created.presence == 0) {
@@ -137,11 +143,6 @@ void mme_s11_handle_create_session_response(
         }
     }
 
-    ogs_assert(mme_ue);
-
-    rv = ogs_gtp_xact_commit(xact);
-    ogs_expect_or_return(rv == OGS_OK);
-
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
         if (create_action == OGS_GTP_CREATE_IN_ATTACH_REQUEST) {
             ogs_error("[%s] Attach reject", mme_ue->imsi_bcd);
@@ -152,23 +153,31 @@ void mme_s11_handle_create_session_response(
         return;
     }
 
-    /****************************
-     * Check Manatory IE Missing
-     ****************************/
+    /*****************************************
+     * Check Mandatory/Conditional IE Missing
+     *****************************************/
     ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
+
+    if (rsp->cause.presence == 0) {
+        ogs_error("No Cause");
+        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
+    }
+    if (rsp->bearer_contexts_created.cause.presence == 0) {
+        ogs_error("No Bearer Cause");
+        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
+    }
 
     if (rsp->pdn_address_allocation.presence == 0) {
         ogs_error("No PDN Address Allocation");
-        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
+        cause_value = OGS_GTP2_CAUSE_CONDITIONAL_IE_MISSING;
     }
-
     if (rsp->sender_f_teid_for_control_plane.presence == 0) {
         ogs_error("No S11 TEID");
-        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
+        cause_value = OGS_GTP2_CAUSE_CONDITIONAL_IE_MISSING;
     }
     if (rsp->bearer_contexts_created.s1_u_enodeb_f_teid.presence == 0) {
         ogs_error("No S1U TEID");
-        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
+        cause_value = OGS_GTP2_CAUSE_CONDITIONAL_IE_MISSING;
     }
 
     if (rsp->pdn_address_allocation.presence) {
@@ -322,8 +331,9 @@ void mme_s11_handle_modify_bearer_response(
 {
     int rv;
     uint8_t cause_value = 0;
+    ogs_gtp2_cause_t *cause = NULL;
 
-    mme_ue_t *mme_ue = mme_ue_from_teid;
+    mme_ue_t *mme_ue = NULL;
     sgw_ue_t *sgw_ue = NULL;
     mme_sess_t *sess = NULL;
     mme_bearer_t *bearer = NULL;
@@ -333,39 +343,66 @@ void mme_s11_handle_modify_bearer_response(
 
     ogs_debug("Modify Bearer Response");
 
-    cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
-
-    if (!mme_ue) {
-        ogs_error("No Context in TEID");
-        bearer = xact->data;
-        ogs_assert(bearer);
-        sess = bearer->sess;
-        ogs_assert(sess);
-        mme_ue = sess->mme_ue;
-        ogs_assert(mme_ue);
-    }
+    /********************
+     * Check Transaction
+     ********************/
+    bearer = xact->data;
+    ogs_assert(bearer);
+    sess = bearer->sess;
+    ogs_assert(sess);
+    mme_ue = sess->mme_ue;
+    ogs_assert(mme_ue);
 
     rv = ogs_gtp_xact_commit(xact);
     ogs_expect_or_return(rv == OGS_OK);
 
-    if (rsp->cause.presence) {
-        ogs_gtp2_cause_t *cause = rsp->cause.data;
-        ogs_assert(cause);
+    /************************
+     * Check SGW-UE Context
+     ************************/
+    cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
 
-        cause_value = cause->value;
-        if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED)
-            ogs_warn("GTP Failed [CAUSE:%d]", cause_value);
-    } else {
+    if (!mme_ue_from_teid) {
+        ogs_error("No Context in TEID");
+        cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
+    }
+
+    if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+        mme_send_delete_session_or_mme_ue_context_release(mme_ue);
+        return;
+    }
+
+    /*****************************************
+     * Check Mandatory/Conditional IE Missing
+     *****************************************/
+    ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
+
+    if (rsp->cause.presence == 0) {
         ogs_error("No Cause");
         cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
     }
 
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
-        if (mme_ue_from_teid && mme_ue)
-            mme_send_delete_session_or_mme_ue_context_release(mme_ue);
+        mme_send_delete_session_or_mme_ue_context_release(mme_ue);
         return;
     }
 
+    /********************
+     * Check Cause Value
+     ********************/
+    ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
+
+    cause = rsp->cause.data;
+    ogs_assert(cause);
+    cause_value = cause->value;
+    if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+        ogs_error("GTP Failed [CAUSE:%d]", cause_value);
+        mme_send_delete_session_or_mme_ue_context_release(mme_ue);
+        return;
+    }
+
+    /********************
+     * Check ALL Context
+     ********************/
     ogs_assert(mme_ue);
     sgw_ue = mme_ue->sgw_ue;
     ogs_assert(sgw_ue);
