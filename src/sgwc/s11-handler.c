@@ -169,7 +169,7 @@ void sgwc_s11_handle_create_session_request(
     }
 
     if (!sgwc_ue) {
-        ogs_warn("No Context");
+        ogs_error("No Context");
         cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
     }
 
@@ -319,7 +319,7 @@ void sgwc_s11_handle_modify_bearer_request(
     }
 
     if (!bearer) {
-        ogs_warn("No Context");
+        ogs_error("No Context");
         cause.value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
     }
 
@@ -547,7 +547,7 @@ void sgwc_s11_handle_create_bearer_response(
     ogs_assert(sess);
 
     if (!sgwc_ue) {
-        ogs_warn("No Context in TEID");
+        ogs_error("No Context in TEID");
 
         sgwc_ue = sess->sgwc_ue;
         ogs_assert(sgwc_ue);
@@ -697,7 +697,7 @@ void sgwc_s11_handle_update_bearer_response(
     ogs_assert(sess);
 
     if (!sgwc_ue) {
-        ogs_warn("No Context in TEID");
+        ogs_error("No Context in TEID");
 
         sgwc_ue = sess->sgwc_ue;
         ogs_assert(sgwc_ue);
@@ -789,7 +789,7 @@ void sgwc_s11_handle_delete_bearer_response(
     ogs_assert(sess);
 
     if (!sgwc_ue) {
-        ogs_warn("No Context in TEID");
+        ogs_error("No Context in TEID");
 
         sgwc_ue = sess->sgwc_ue;
         ogs_assert(sgwc_ue);
@@ -901,7 +901,7 @@ void sgwc_s11_handle_release_access_bearers_request(
     cause.value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
 
     if (!sgwc_ue) {
-        ogs_warn("No Context");
+        ogs_error("No Context");
         cause.value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
     }
 
@@ -999,7 +999,7 @@ void sgwc_s11_handle_create_indirect_data_forwarding_tunnel_request(
     cause.value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
 
     if (!sgwc_ue) {
-        ogs_warn("No Context");
+        ogs_error("No Context");
         cause.value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
     }
 
@@ -1125,7 +1125,7 @@ void sgwc_s11_handle_delete_indirect_data_forwarding_tunnel_request(
     cause.value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
 
     if (!sgwc_ue) {
-        ogs_warn("No Context");
+        ogs_error("No Context");
         cause.value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
     }
 
@@ -1188,7 +1188,7 @@ void sgwc_s11_handle_bearer_resource_command(
     }
 
     if (!sgwc_ue) {
-        ogs_warn("No Context");
+        ogs_error("No Context");
         cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
     }
 

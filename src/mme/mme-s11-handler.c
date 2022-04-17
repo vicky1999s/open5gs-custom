@@ -108,7 +108,7 @@ void mme_s11_handle_create_session_response(
     cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
 
     if (!mme_ue) {
-        ogs_warn("No Context in TEID");
+        ogs_error("No Context in TEID");
         sess = xact->data;
         ogs_assert(sess);
         mme_ue = sess->mme_ue;
@@ -333,7 +333,7 @@ void mme_s11_handle_modify_bearer_response(
     cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
 
     if (!mme_ue) {
-        ogs_warn("No Context in TEID");
+        ogs_error("No Context in TEID");
         bearer = xact->data;
         ogs_assert(bearer);
         sess = bearer->sess;
@@ -543,7 +543,7 @@ void mme_s11_handle_create_bearer_request(
     }
 
     if (!bearer) {
-        ogs_warn("No Context");
+        ogs_error("No Context");
         cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
     }
 
@@ -668,7 +668,7 @@ void mme_s11_handle_update_bearer_request(
     }
 
     if (!bearer) {
-        ogs_warn("No Context");
+        ogs_error("No Context");
         cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
     }
 
@@ -876,7 +876,7 @@ void mme_s11_handle_release_access_bearers_response(
     ogs_debug("Release Access Bearers Response");
 
     if (!mme_ue) {
-        ogs_warn("No Context in TEID");
+        ogs_error("No Context in TEID");
         mme_ue = xact->data;
         ogs_assert(mme_ue);
     }
@@ -1151,7 +1151,7 @@ void mme_s11_handle_create_indirect_data_forwarding_tunnel_response(
     ogs_debug("Create Indirect Data Forwarding Tunnel Response");
 
     if (!mme_ue) {
-        ogs_warn("No Context in TEID");
+        ogs_error("No Context in TEID");
         mme_ue = xact->data;
         ogs_assert(mme_ue);
     }
@@ -1234,7 +1234,7 @@ void mme_s11_handle_delete_indirect_data_forwarding_tunnel_response(
     ogs_debug("Delete Indirect Data Forwarding Tunnel Response");
 
     if (!mme_ue) {
-        ogs_warn("No Context in TEID");
+        ogs_error("No Context in TEID");
         mme_ue = xact->data;
         ogs_assert(mme_ue);
     }
@@ -1295,7 +1295,7 @@ void mme_s11_handle_bearer_resource_failure_indication(
     sess = bearer->sess;
     ogs_assert(sess);
     if (!mme_ue) {
-        ogs_warn("No Context in TEID");
+        ogs_error("No Context in TEID");
         mme_ue = sess->mme_ue;
         ogs_assert(mme_ue);
     }
@@ -1327,7 +1327,7 @@ void mme_s11_handle_bearer_resource_failure_indication(
             mme_ue, sess->pti, esm_cause_from_gtp(cause_value)));
 
     if (cause_value == OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND) {
-        ogs_warn("No Bearer");
+        ogs_error("No Bearer");
         mme_bearer_remove(bearer);
     }
 }
