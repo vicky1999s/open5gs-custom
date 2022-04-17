@@ -481,12 +481,12 @@ void mme_s11_handle_delete_session_response(
      * Check ALL Context
      ********************/
     ogs_assert(mme_ue);
-    ogs_assert(sgw_ue);
-
     ogs_assert(sess);
 
-    ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
-            sgw_ue->mme_s11_teid, sgw_ue->sgw_s11_teid);
+    if (sgw_ue) {
+        ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
+                sgw_ue->mme_s11_teid, sgw_ue->sgw_s11_teid);
+    }
 
     if (action == OGS_GTP_DELETE_SEND_AUTHENTICATION_REQUEST) {
         if (mme_sess_count(mme_ue) == 1) /* Last Session */ {
@@ -1010,8 +1010,12 @@ void mme_s11_handle_release_access_bearers_response(
     /***********************
      * Check SGW-UE Context
      ***********************/
-    sgw_ue = mme_ue->sgw_ue;
-    ogs_assert(sgw_ue);
+    if (!mme_ue_from_teid) {
+        ogs_error("No Context in TEID");
+    } else {
+        sgw_ue = mme_ue->sgw_ue;
+        ogs_assert(sgw_ue);
+    }
 
     /********************
      * Check Cause Value
@@ -1029,10 +1033,11 @@ void mme_s11_handle_release_access_bearers_response(
      * Check ALL Context
      ********************/
     ogs_assert(mme_ue);
-    ogs_assert(sgw_ue);
 
-    ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
-            sgw_ue->mme_s11_teid, sgw_ue->sgw_s11_teid);
+    if (sgw_ue) {
+        ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
+                sgw_ue->mme_s11_teid, sgw_ue->sgw_s11_teid);
+    }
 
     ogs_list_for_each(&mme_ue->sess_list, sess) {
         ogs_list_for_each(&sess->bearer_list, bearer) {
@@ -1494,25 +1499,35 @@ void mme_s11_handle_bearer_resource_failure_indication(
 
     mme_bearer_t *bearer = NULL;
     mme_sess_t *sess = NULL;
-    mme_ue_t *mme_ue = mme_ue_from_teid;
+    mme_ue_t *mme_ue = NULL;
     sgw_ue_t *sgw_ue = NULL;
 
+    ogs_debug("Bearer Resource Failure Indication");
+
+    /********************
+     * Check Transaction
+     ********************/
     ogs_assert(xact);
     bearer = xact->data;
     ogs_assert(ind);
     sess = bearer->sess;
     ogs_assert(sess);
-    if (!mme_ue) {
-        ogs_error("No Context in TEID");
-        mme_ue = sess->mme_ue;
-        ogs_assert(mme_ue);
-    }
-
-    ogs_debug("Bearer Resource Failure Indication");
+    mme_ue = sess->mme_ue;
+    ogs_assert(mme_ue);
 
     rv = ogs_gtp_xact_commit(xact);
     ogs_expect_or_return(rv == OGS_OK);
 
+    if (!mme_ue_from_teid) {
+        ogs_error("No Context in TEID");
+    } else {
+        sgw_ue = mme_ue->sgw_ue;
+        ogs_assert(sgw_ue);
+    }
+
+    /********************
+     * Check Cause Value
+     ********************/
     if (ind->cause.presence) {
         ogs_gtp2_cause_t *cause = ind->cause.data;
         ogs_assert(cause);
@@ -1523,18 +1538,22 @@ void mme_s11_handle_bearer_resource_failure_indication(
         ogs_error("No Cause");
     }
 
+    /********************
+     * Check ALL Context
+     ********************/
     ogs_assert(mme_ue);
-    sgw_ue = mme_ue->sgw_ue;
-    ogs_assert(sgw_ue);
 
-    ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
-            sgw_ue->mme_s11_teid, sgw_ue->sgw_s11_teid);
+    if (sgw_ue) {
+        ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
+                sgw_ue->mme_s11_teid, sgw_ue->sgw_s11_teid);
+    }
 
     ogs_assert(OGS_OK ==
         nas_eps_send_bearer_resource_modification_reject(
             mme_ue, sess->pti, esm_cause_from_gtp(cause_value)));
 
-    if (cause_value == OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND) {
+    if (!mme_ue_from_teid ||
+        cause_value == OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND) {
         ogs_error("No Bearer");
         mme_bearer_remove(bearer);
     }
