@@ -580,15 +580,15 @@ void mme_state_operational(ogs_fsm_t *s, mme_event_t *e)
             break;
         case OGS_GTP2_CREATE_SESSION_RESPONSE_TYPE:
             mme_s11_handle_create_session_response(
-                xact, mme_ue, &gtp_message.create_session_response);
+                xact, sgw_ue, &gtp_message.create_session_response);
             break;
         case OGS_GTP2_MODIFY_BEARER_RESPONSE_TYPE:
             mme_s11_handle_modify_bearer_response(
-                xact, mme_ue, &gtp_message.modify_bearer_response);
+                xact, sgw_ue, &gtp_message.modify_bearer_response);
             break;
         case OGS_GTP2_DELETE_SESSION_RESPONSE_TYPE:
             mme_s11_handle_delete_session_response(
-                xact, mme_ue, &gtp_message.delete_session_response);
+                xact, sgw_ue, &gtp_message.delete_session_response);
             break;
         case OGS_GTP2_CREATE_BEARER_REQUEST_TYPE:
             mme_s11_handle_create_bearer_request(

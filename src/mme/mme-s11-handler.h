@@ -31,13 +31,13 @@ void mme_s11_handle_echo_request(
 void mme_s11_handle_echo_response(
         ogs_gtp_xact_t *xact, ogs_gtp2_echo_response_t *rsp);
 void mme_s11_handle_create_session_response(
-        ogs_gtp_xact_t *xact, mme_ue_t *mme_ue,
+        ogs_gtp_xact_t *xact, sgw_ue_t *sgw_ue,
         ogs_gtp2_create_session_response_t *rsp);
 void mme_s11_handle_modify_bearer_response(
-        ogs_gtp_xact_t *xact, mme_ue_t *mme_ue,
+        ogs_gtp_xact_t *xact, sgw_ue_t *sgw_ue,
         ogs_gtp2_modify_bearer_response_t *rsp);
 void mme_s11_handle_delete_session_response(
-        ogs_gtp_xact_t *xact, mme_ue_t *mme_ue,
+        ogs_gtp_xact_t *xact, sgw_ue_t *sgw_ue,
         ogs_gtp2_delete_session_response_t *rsp);
 void mme_s11_handle_create_bearer_request(
         ogs_gtp_xact_t *xact, mme_ue_t *mme_ue,
