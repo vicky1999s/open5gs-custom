@@ -625,7 +625,7 @@ void mme_s11_handle_create_bearer_request(
     }
     if (req->bearer_contexts.s1_u_enodeb_f_teid.presence == 0) {
         ogs_error("No GTP TEID");
-        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
+        cause_value = OGS_GTP2_CAUSE_CONDITIONAL_IE_MISSING;
     }
     if (req->bearer_contexts.bearer_level_qos.presence == 0) {
         ogs_error("No QoS");

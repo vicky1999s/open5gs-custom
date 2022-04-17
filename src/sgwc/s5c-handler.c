@@ -531,7 +531,7 @@ void sgwc_s5c_handle_create_bearer_request(
     }
     if (req->bearer_contexts.s4_u_sgsn_f_teid.presence == 0) {
         ogs_error("No GTP TEID");
-        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
+        cause_value = OGS_GTP2_CAUSE_CONDITIONAL_IE_MISSING;
     }
 
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
