@@ -559,13 +559,10 @@ void mme_state_operational(ogs_fsm_t *s, mme_event_t *e)
             gnode = sgw_ue->gnode;
             ogs_assert(gnode);
 
+            mme_ue = sgw_ue->mme_ue;
         } else {
             gnode = e->gnode;
             ogs_assert(gnode);
-        }
-
-        if (sgw_ue) {
-            mme_ue = sgw_ue->mme_ue;
         }
 
         rv = ogs_gtp_xact_receive(gnode, &gtp_message.h, &xact);
@@ -610,7 +607,7 @@ void mme_state_operational(ogs_fsm_t *s, mme_event_t *e)
                 xact, mme_ue, &gtp_message.release_access_bearers_response);
             break;
         case OGS_GTP2_DOWNLINK_DATA_NOTIFICATION_TYPE:
-            if (!mme_ue) {
+            if (!sgw_ue) {
                 if (gtp_message.h.teid_presence)
                     ogs_warn("No Context : TEID[%d]", gtp_message.h.teid);
                 else
