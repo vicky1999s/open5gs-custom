@@ -1395,43 +1395,78 @@ void mme_s11_handle_delete_indirect_data_forwarding_tunnel_response(
 {
     int rv;
     uint8_t cause_value = 0;
+    ogs_gtp2_cause_t *cause = NULL;
     int action = 0;
     mme_ue_t *mme_ue = mme_ue_from_teid;
     sgw_ue_t *sgw_ue = NULL;
 
-    ogs_assert(xact);
-    action = xact->delete_indirect_action;
-    ogs_assert(action);
     ogs_assert(rsp);
 
     ogs_debug("Delete Indirect Data Forwarding Tunnel Response");
 
-    if (!mme_ue) {
-        ogs_error("No Context in TEID");
-        mme_ue = xact->data;
-        ogs_assert(mme_ue);
-    }
+    /********************
+     * Check Transaction
+     ********************/
+    ogs_assert(xact);
+    action = xact->delete_indirect_action;
+    ogs_assert(action);
+    mme_ue = xact->data;
+    ogs_assert(mme_ue);
 
     rv = ogs_gtp_xact_commit(xact);
     ogs_expect_or_return(rv == OGS_OK);
 
-    if (rsp->cause.presence) {
-        ogs_gtp2_cause_t *cause = rsp->cause.data;
-        ogs_assert(cause);
+    /************************
+     * Check SGW-UE Context
+     ************************/
+    cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
 
-        cause_value = cause->value;
-        if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED)
-            ogs_warn("GTP Failed [CAUSE:%d]", cause_value);
+    if (!mme_ue_from_teid) {
+        ogs_error("No Context in TEID");
+        cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
+    } else {
+        sgw_ue = mme_ue->sgw_ue;
+        ogs_assert(sgw_ue);
     }
 
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
-        if (mme_ue_from_teid && mme_ue)
-            mme_send_delete_session_or_mme_ue_context_release(mme_ue);
+        mme_send_delete_session_or_mme_ue_context_release(mme_ue);
         return;
     }
 
+    /*****************************************
+     * Check Mandatory/Conditional IE Missing
+     *****************************************/
+    ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
+
+    if (rsp->cause.presence == 0) {
+        ogs_error("No Cause");
+        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
+    }
+
+    if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+        mme_send_delete_session_or_mme_ue_context_release(mme_ue);
+        return;
+    }
+
+    /********************
+     * Check Cause Value
+     ********************/
+    ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
+
+    cause = rsp->cause.data;
+    ogs_assert(cause);
+    cause_value = cause->value;
+    if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+        ogs_error("GTP Failed [CAUSE:%d]", cause_value);
+        mme_send_delete_session_or_mme_ue_context_release(mme_ue);
+        return;
+    }
+
+    /********************
+     * Check ALL Context
+     ********************/
     ogs_assert(mme_ue);
-    sgw_ue = mme_ue->sgw_ue;
     ogs_assert(sgw_ue);
 
     ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
