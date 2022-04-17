@@ -82,6 +82,7 @@ void mme_s11_handle_create_session_response(
 {
     int rv;
     uint8_t cause_value = 0;
+    ogs_gtp2_cause_t *cause = NULL;
     ogs_gtp2_f_teid_t *sgw_s11_teid = NULL;
     ogs_gtp2_f_teid_t *sgw_s1u_teid = NULL;
 
@@ -101,7 +102,60 @@ void mme_s11_handle_create_session_response(
 
     ogs_debug("Create Session Response");
 
+    /************************
+     * Check Session Context
+     ************************/
     cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
+
+    if (!mme_ue) {
+        ogs_warn("No Context in TEID");
+        sess = xact->data;
+        ogs_assert(sess);
+        mme_ue = sess->mme_ue;
+        ogs_assert(mme_ue);
+
+        cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
+    } else {
+        if (rsp->bearer_contexts_created.presence == 0) {
+            ogs_error("No Bearer");
+            cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
+        }
+        if (rsp->bearer_contexts_created.eps_bearer_id.presence == 0) {
+            ogs_error("No EPS Bearer ID");
+            cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
+        }
+
+        if (cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+            bearer = mme_bearer_find_by_ue_ebi(mme_ue,
+                    rsp->bearer_contexts_created.eps_bearer_id.u8);
+
+            if (!bearer) {
+                ogs_error("No Context for EPS Bearer ID[%d]",
+                        rsp->bearer_contexts_created.eps_bearer_id.u8);
+                cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
+            }
+        }
+    }
+
+    ogs_assert(mme_ue);
+
+    rv = ogs_gtp_xact_commit(xact);
+    ogs_expect_or_return(rv == OGS_OK);
+
+    if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+        if (create_action == OGS_GTP_CREATE_IN_ATTACH_REQUEST) {
+            ogs_error("[%s] Attach reject", mme_ue->imsi_bcd);
+            ogs_assert(OGS_OK == nas_eps_send_attach_reject(mme_ue,
+                    EMM_CAUSE_NETWORK_FAILURE, ESM_CAUSE_NETWORK_FAILURE));
+        }
+        mme_send_delete_session_or_mme_ue_context_release(mme_ue);
+        return;
+    }
+
+    /****************************
+     * Check Manatory IE Missing
+     ****************************/
+    ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
 
     if (rsp->pdn_address_allocation.presence == 0) {
         ogs_error("No PDN Address Allocation");
@@ -116,53 +170,6 @@ void mme_s11_handle_create_session_response(
         ogs_error("No S1U TEID");
         cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
     }
-    if (rsp->bearer_contexts_created.presence == 0) {
-        ogs_error("No Bearer");
-        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
-    }
-    if (rsp->bearer_contexts_created.eps_bearer_id.presence == 0) {
-        ogs_error("No EPS Bearer ID");
-        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
-    }
-
-    if (!mme_ue) {
-        ogs_warn("No Context in TEID");
-        sess = xact->data;
-        ogs_assert(sess);
-        mme_ue = sess->mme_ue;
-        ogs_assert(mme_ue);
-    }
-
-    rv = ogs_gtp_xact_commit(xact);
-    ogs_expect_or_return(rv == OGS_OK);
-
-    if (rsp->cause.presence) {
-        ogs_gtp2_cause_t *cause = rsp->cause.data;
-        ogs_assert(cause);
-
-        cause_value = cause->value;
-        if (cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED ||
-            cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED_PARTIALLY ||
-            cause_value ==
-                OGS_GTP2_CAUSE_NEW_PDN_TYPE_DUE_TO_NETWORK_PREFERENCE ||
-            cause_value ==
-                OGS_GTP2_CAUSE_NEW_PDN_TYPE_DUE_TO_SINGLE_ADDRESS_BEARER_ONLY) {
-            if (rsp->bearer_contexts_created.cause.presence) {
-                cause = rsp->bearer_contexts_created.cause.data;
-                ogs_assert(cause);
-
-                cause_value = cause->value;
-            } else {
-                ogs_error("No Cause");
-                cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
-            }
-        } else {
-            ogs_warn("GTP Failed [CAUSE:%d]", cause_value);
-        }
-    } else {
-        ogs_error("No Cause");
-        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
-    }
 
     if (rsp->pdn_address_allocation.presence) {
         ogs_paa_t paa;
@@ -174,34 +181,56 @@ void mme_s11_handle_create_session_response(
             ogs_error("Unknown PDN Type[%u]", paa.session_type);
             cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_INCORRECT;
         }
+    } else {
+        ogs_error("No PDN Address Allocation");
+        cause_value = OGS_GTP2_CAUSE_CONDITIONAL_IE_MISSING;
     }
 
-    if (mme_ue_from_teid && mme_ue &&
-        cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
-        bearer = mme_bearer_find_by_ue_ebi(mme_ue,
-                rsp->bearer_contexts_created.eps_bearer_id.u8);
+    if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+        if (create_action == OGS_GTP_CREATE_IN_ATTACH_REQUEST) {
+            ogs_error("[%s] Attach reject", mme_ue->imsi_bcd);
+            ogs_assert(OGS_OK == nas_eps_send_attach_reject(mme_ue,
+                    EMM_CAUSE_NETWORK_FAILURE, ESM_CAUSE_NETWORK_FAILURE));
+        }
+        mme_send_delete_session_or_mme_ue_context_release(mme_ue);
+        return;
     }
 
-    if (!bearer) {
-        ogs_warn("No Context");
-        cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
+    /********************
+     * Check Cause Value
+     ********************/
+    ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
+
+    cause = rsp->bearer_contexts_created.cause.data;
+    ogs_assert(cause);
+    cause_value = cause->value;
+    if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+        ogs_error("GTP Failed [Bearer-CAUSE:%d]", cause_value);
+        if (create_action == OGS_GTP_CREATE_IN_ATTACH_REQUEST) {
+            ogs_error("[%s] Attach reject", mme_ue->imsi_bcd);
+            ogs_assert(OGS_OK == nas_eps_send_attach_reject(mme_ue,
+                    EMM_CAUSE_NETWORK_FAILURE, ESM_CAUSE_NETWORK_FAILURE));
+        }
+        mme_send_delete_session_or_mme_ue_context_release(mme_ue);
+        return;
     }
 
+    cause = rsp->cause.data;
+    ogs_assert(cause);
+    cause_value = cause->value;
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED &&
         cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED_PARTIALLY &&
         cause_value !=
             OGS_GTP2_CAUSE_NEW_PDN_TYPE_DUE_TO_NETWORK_PREFERENCE &&
         cause_value !=
             OGS_GTP2_CAUSE_NEW_PDN_TYPE_DUE_TO_SINGLE_ADDRESS_BEARER_ONLY) {
-        if (mme_ue_from_teid && mme_ue) {
-            if (create_action == OGS_GTP_CREATE_IN_ATTACH_REQUEST) {
-                ogs_error("[%s] Attach reject", mme_ue->imsi_bcd);
-                ogs_assert(OGS_OK ==
-                    nas_eps_send_attach_reject(mme_ue,
-                        EMM_CAUSE_NETWORK_FAILURE, ESM_CAUSE_NETWORK_FAILURE));
-            }
-            mme_send_delete_session_or_mme_ue_context_release(mme_ue);
+        ogs_error("GTP Failed [CAUSE:%d]", cause_value);
+        if (create_action == OGS_GTP_CREATE_IN_ATTACH_REQUEST) {
+            ogs_error("[%s] Attach reject", mme_ue->imsi_bcd);
+            ogs_assert(OGS_OK == nas_eps_send_attach_reject(mme_ue,
+                    EMM_CAUSE_NETWORK_FAILURE, ESM_CAUSE_NETWORK_FAILURE));
         }
+        mme_send_delete_session_or_mme_ue_context_release(mme_ue);
         return;
     }
 
