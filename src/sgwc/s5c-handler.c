@@ -138,15 +138,6 @@ void sgwc_s5c_handle_create_session_response(
      *****************************************/
     ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
 
-    if (rsp->cause.presence == 0) {
-        ogs_error("No Cause");
-        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
-    }
-    if (rsp->bearer_contexts_created.cause.presence == 0) {
-        ogs_error("No Bearer Cause");
-        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
-    }
-
     if (rsp->pgw_s5_s8__s2a_s2b_f_teid_for_pmip_based_interface_or_for_gtp_based_control_plane_interface.presence == 0) {
         ogs_error("No GTP TEID");
         cause_value = OGS_GTP2_CAUSE_CONDITIONAL_IE_MISSING;
@@ -169,6 +160,15 @@ void sgwc_s5c_handle_create_session_response(
     } else {
         ogs_error("No PDN Address Allocation");
         cause_value = OGS_GTP2_CAUSE_CONDITIONAL_IE_MISSING;
+    }
+
+    if (rsp->cause.presence == 0) {
+        ogs_error("No Cause");
+        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
+    }
+    if (rsp->bearer_contexts_created.cause.presence == 0) {
+        ogs_error("No Bearer Cause");
+        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
     }
 
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
