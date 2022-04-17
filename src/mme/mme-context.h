@@ -760,23 +760,23 @@ bool mme_ue_have_active_eps_bearers(mme_ue_t *mme_ue);
  * ### MME_UE_ECM_CONNECTED() ###
  *
  * o RECV Initial Context Setup Failure in EMM Registered State
- * ### MME_UE_DEASSOCIATE_ENB_UE() ###
+ * ### ENB_UE_DEASSOCIATE_MME_UE() ###
  * ### ENB_UE_REMOVE() ###
- * ### MME_UE_DEASSOCIATE() ###
+ * ### ENB_UE_UNLINK() ###
  *
- * o SEND UE Context Release Command with NO_ACTION
+ * o SEND UE Context Release Command with S1_REMOVE_AND_UNLINK
  *   - RECV UE Context Release Complete
  * ### ENB_UE_REMOVE() ###
- * ### MME_UE_DEASSOCIATE() ###
+ * ### ENB_UE_UNLINK() ###
  *
- * o SEND UE Context Release Command with REMOVE_MME_UE_CONTEXT
+ * o SEND UE Context Release Command with UE_CONTEXT_REMOVE
  *   - RECV UE Context Release Complete
  * ### ENB_UE_REMOVE() ###
  * ### MME_UE_REMOVE() ###
  *
  *
  * o RECV Handover Required
- * ### SOURCE_UE_ASSOCIATE_TARGET_UE() ####
+ * ### ENB_UE_SOURCE_ASSOCIATE_TARGET() ####
  *   - SEND Handover Request
  *
  * o RECV Handover Notify
@@ -784,27 +784,27 @@ bool mme_ue_have_active_eps_bearers(mme_ue_t *mme_ue);
  * ### MME_UE_ECM_CONNECTED(TARGET) ###
  *   - Modify Bearer Request/Response
  *   - UE Context Release Command/Complete
- * ### SOURCE_UE_DEASSOCIATE_TARGET_UE() ####
+ * ### ENB_UE_SOURCE_DEASSOCIATE_TARGET() ####
  * ### ENB_UE_REMOVE() ####
  *   - Delete Indirect Data Forwarding Tunnel Request/Response
  *
  * o RECV Handover Cancel
  *   - UE Context Release Command/Complete
- * ### SOURCE_UE_DEASSOCIATE_TARGET_UE() ####
+ * ### ENB_UE_SOURCE_DEASSOCIATE_TARGET() ####
  * ### ENB_UE_REMOVE() ####
  *   - Delete Indirect Data Forwarding Tunnel Request/Response
  *
  * o RECV Handover Failure
  *   - UE Context Release Command/Complete
- * ### SOURCE_UE_DEASSOCIATE_TARGET_UE() ####
+ * ### ENB_UE_SOURCE_DEASSOCIATE_TARGET() ####
  * ### ENB_UE_REMOVE() ####
  *   - Delete Indirect Data Forwarding Tunnel Request/Response
  */
-void mme_ue_associate_enb_ue(mme_ue_t *mme_ue, enb_ue_t *enb_ue);
+void enb_ue_associate_mme_ue(enb_ue_t *enb_ue, mme_ue_t *mme_ue);
 void enb_ue_deassociate(enb_ue_t *enb_ue);
-void mme_ue_deassociate(mme_ue_t *mme_ue);
-void source_ue_associate_target_ue(enb_ue_t *source_ue, enb_ue_t *target_ue);
-void source_ue_deassociate_target_ue(enb_ue_t *enb_ue);
+void enb_ue_unlink(mme_ue_t *mme_ue);
+void enb_ue_source_associate_target(enb_ue_t *source_ue, enb_ue_t *target_ue);
+void enb_source_deassociate_target(enb_ue_t *enb_ue);
 
 mme_sess_t *mme_sess_add(mme_ue_t *mme_ue, uint8_t pti);
 void mme_sess_remove(mme_sess_t *sess);

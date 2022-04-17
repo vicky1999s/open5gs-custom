@@ -311,7 +311,7 @@ void s1ap_handle_initial_ue_message(mme_enb_t *enb, ogs_s1ap_message_t *message)
                             S1AP_Cause_PR_nas, S1AP_CauseNas_normal_release,
                             S1AP_UE_CTX_REL_S1_CONTEXT_REMOVE, 0));
                 }
-                mme_ue_associate_enb_ue(mme_ue, enb_ue);
+                enb_ue_associate_mme_ue(enb_ue, mme_ue);
             }
         }
     }
@@ -1471,7 +1471,7 @@ void s1ap_handle_ue_context_release_action(enb_ue_t *enb_ue)
         ogs_debug("    Action: S1 normal release");
         enb_ue_remove(enb_ue);
         ogs_expect_or_return(mme_ue);
-        mme_ue_deassociate(mme_ue);
+        enb_ue_unlink(mme_ue);
         break;
     case S1AP_UE_CTX_REL_UE_CONTEXT_REMOVE:
         ogs_debug("    Action: UE context remove");
@@ -1484,7 +1484,7 @@ void s1ap_handle_ue_context_release_action(enb_ue_t *enb_ue)
     case S1AP_UE_CTX_REL_S1_HANDOVER_COMPLETE:
         ogs_debug("    Action: S1 handover complete");
 
-        source_ue_deassociate_target_ue(enb_ue);
+        enb_source_deassociate_target(enb_ue);
         enb_ue_remove(enb_ue);
 
         ogs_expect_or_return(mme_ue);
@@ -1502,7 +1502,7 @@ void s1ap_handle_ue_context_release_action(enb_ue_t *enb_ue)
     case S1AP_UE_CTX_REL_S1_HANDOVER_CANCEL:
         ogs_warn("    Action: S1 handover cancel");
 
-        source_ue_deassociate_target_ue(enb_ue);
+        enb_source_deassociate_target(enb_ue);
         enb_ue_remove(enb_ue);
 
         ogs_expect_or_return(mme_ue);
@@ -1524,7 +1524,7 @@ void s1ap_handle_ue_context_release_action(enb_ue_t *enb_ue)
     case S1AP_UE_CTX_REL_S1_HANDOVER_FAILURE:
         ogs_warn("    Action: S1 handover failure");
 
-        source_ue_deassociate_target_ue(enb_ue);
+        enb_source_deassociate_target(enb_ue);
         enb_ue_remove(enb_ue);
 
         ogs_expect_or_return(mme_ue);
@@ -1538,7 +1538,7 @@ void s1ap_handle_ue_context_release_action(enb_ue_t *enb_ue)
         ogs_debug("    Action: S1 paging");
         enb_ue_remove(enb_ue);
         ogs_expect_or_return(mme_ue);
-        mme_ue_deassociate(mme_ue);
+        enb_ue_unlink(mme_ue);
 
         ogs_assert(OGS_OK == s1ap_send_paging(mme_ue, S1AP_CNDomain_ps));
         break;
@@ -2877,7 +2877,7 @@ void s1ap_handle_handover_notification(
     ogs_debug("    Target : ENB_UE_S1AP_ID[%d] MME_UE_S1AP_ID[%d]",
             target_ue->enb_ue_s1ap_id, target_ue->mme_ue_s1ap_id);
 
-    mme_ue_associate_enb_ue(mme_ue, target_ue);
+    enb_ue_associate_mme_ue(target_ue, mme_ue);
 
     memcpy(&target_ue->saved.tai.plmn_id, pLMNidentity->buf,
             sizeof(target_ue->saved.tai.plmn_id));

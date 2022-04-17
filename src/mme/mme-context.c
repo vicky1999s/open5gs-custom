@@ -2324,7 +2324,7 @@ void mme_ue_remove(mme_ue_t *mme_ue)
     ogs_timer_delete(mme_ue->t3460.timer);
     ogs_timer_delete(mme_ue->t3470.timer);
 
-    mme_ue_deassociate(mme_ue);
+    enb_ue_unlink(mme_ue);
 
     mme_sess_remove_all(mme_ue);
     mme_session_remove_all(mme_ue);
@@ -2683,7 +2683,7 @@ bool mme_ue_have_active_eps_bearers(mme_ue_t *mme_ue)
     return false;
 }
 
-void mme_ue_associate_enb_ue(mme_ue_t *mme_ue, enb_ue_t *enb_ue)
+void enb_ue_associate_mme_ue(enb_ue_t *enb_ue, mme_ue_t *mme_ue)
 {
     ogs_assert(mme_ue);
     ogs_assert(enb_ue);
@@ -2698,14 +2698,13 @@ void enb_ue_deassociate(enb_ue_t *enb_ue)
     enb_ue->mme_ue = NULL;
 }
 
-void mme_ue_deassociate(mme_ue_t *mme_ue)
+void enb_ue_unlink(mme_ue_t *mme_ue)
 {
     ogs_assert(mme_ue);
     mme_ue->enb_ue = NULL;
 }
 
-void source_ue_associate_target_ue(
-        enb_ue_t *source_ue, enb_ue_t *target_ue)
+void enb_ue_source_associate_target(enb_ue_t *source_ue, enb_ue_t *target_ue)
 {
     mme_ue_t *mme_ue = NULL;
 
@@ -2719,7 +2718,7 @@ void source_ue_associate_target_ue(
     source_ue->target_ue = target_ue;
 }
 
-void source_ue_deassociate_target_ue(enb_ue_t *enb_ue)
+void enb_source_deassociate_target(enb_ue_t *enb_ue)
 {
     enb_ue_t *source_ue = NULL;
     enb_ue_t *target_ue = NULL;

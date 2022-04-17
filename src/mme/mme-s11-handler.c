@@ -890,7 +890,7 @@ void mme_s11_handle_release_access_bearers_response(
     } else if (action == OGS_GTP_RELEASE_S1_CONTEXT_REMOVE_BY_LO_CONNREFUSED) {
         enb_ue = enb_ue_cycle(mme_ue->enb_ue);
 
-        mme_ue_deassociate(mme_ue);
+        enb_ue_unlink(mme_ue);
 
         if (enb_ue) {
             enb_ue_remove(enb_ue);
@@ -914,7 +914,7 @@ void mme_s11_handle_release_access_bearers_response(
     } else if (action == OGS_GTP_RELEASE_S1_CONTEXT_REMOVE_BY_RESET_ALL) {
         enb_ue = enb_ue_cycle(mme_ue->enb_ue);
 
-        mme_ue_deassociate(mme_ue);
+        enb_ue_unlink(mme_ue);
 
         if (enb_ue) {
             mme_enb_t *enb = enb_ue->enb;
@@ -934,7 +934,7 @@ void mme_s11_handle_release_access_bearers_response(
 
         enb_ue = enb_ue_cycle(mme_ue->enb_ue);
 
-        mme_ue_deassociate(mme_ue);
+        enb_ue_unlink(mme_ue);
 
         if (enb_ue) {
             mme_enb_t *enb = enb_ue->enb;

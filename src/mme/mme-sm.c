@@ -338,7 +338,7 @@ void mme_state_operational(ogs_fsm_t *s, mme_event_t *e)
                         S1AP_Cause_PR_nas, S1AP_CauseNas_normal_release,
                         S1AP_UE_CTX_REL_S1_CONTEXT_REMOVE, 0));
             }
-            mme_ue_associate_enb_ue(mme_ue, enb_ue);
+            enb_ue_associate_mme_ue(enb_ue, mme_ue);
         }
 
         ogs_assert(mme_ue);
