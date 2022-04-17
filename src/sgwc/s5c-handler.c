@@ -63,8 +63,8 @@ void sgwc_s5c_handle_create_session_response(
         ogs_pkbuf_t *gtpbuf, ogs_gtp2_message_t *message)
 {
     int rv;
-    ogs_gtp2_cause_t *cause = NULL;
     uint8_t cause_value;
+    ogs_gtp2_cause_t *cause = NULL;
 
     sgwc_ue_t *sgwc_ue = NULL;
     sgwc_bearer_t *bearer = NULL;

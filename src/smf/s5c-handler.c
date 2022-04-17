@@ -441,22 +441,48 @@ void smf_s5c_handle_create_bearer_response(
 {
     int rv;
     uint8_t cause_value;
+    ogs_gtp2_cause_t *cause = NULL;
     ogs_gtp2_f_teid_t *sgw_s5u_teid, *pgw_s5u_teid;
     smf_bearer_t *bearer = NULL;
     ogs_pfcp_far_t *dl_far = NULL;
 
-    ogs_assert(xact);
     ogs_assert(rsp);
-
-    bearer = xact->data;
-    ogs_assert(bearer);
 
     ogs_debug("Create Bearer Response");
 
-    cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
+    /********************
+     * Check Transaction
+     ********************/
+    ogs_assert(xact);
+    bearer = xact->data;
+    ogs_assert(bearer);
 
     rv = ogs_gtp_xact_commit(xact);
     ogs_expect(rv == OGS_OK);
+
+    /************************
+     * Check Session Context
+     ************************/
+    cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
+
+    if (!sess) {
+        ogs_error("No Context in TEID");
+        cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
+    }
+
+    if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+        ogs_assert(OGS_OK ==
+            smf_epc_pfcp_send_bearer_modification_request(
+                bearer, NULL, OGS_PFCP_MODIFY_REMOVE,
+                OGS_NAS_PROCEDURE_TRANSACTION_IDENTITY_UNASSIGNED,
+                OGS_GTP2_CAUSE_UNDEFINED_VALUE));
+        return;
+    }
+
+    /*****************************************
+     * Check Mandatory/Conditional IE Missing
+     *****************************************/
+    ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
 
     if (rsp->bearer_contexts.presence == 0) {
         ogs_error("No Bearer");
@@ -485,42 +511,19 @@ void smf_s5c_handle_create_bearer_response(
 
     if (!pgw_s5u_teid) {
         ogs_error("No PGW TEID");
-        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
+        cause_value = OGS_GTP2_CAUSE_CONDITIONAL_IE_MISSING;
     }
     if (!sgw_s5u_teid) {
         ogs_error("No SGW TEID");
+        cause_value = OGS_GTP2_CAUSE_CONDITIONAL_IE_MISSING;
+    }
+
+    if (rsp->cause.presence == 0) {
+        ogs_error("No Cause");
         cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
     }
-
-    if (!sess) {
-        ogs_error("No Context in TEID");
-
-        sess = bearer->sess;
-        ogs_assert(sess);
-
-        cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
-    }
-
-    if (rsp->cause.presence) {
-        ogs_gtp2_cause_t *cause = rsp->cause.data;
-        ogs_assert(cause);
-
-        cause_value = cause->value;
-        if (cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
-            if (rsp->bearer_contexts.cause.presence) {
-                cause = rsp->bearer_contexts.cause.data;
-                ogs_assert(cause);
-
-                cause_value = cause->value;
-            } else {
-                ogs_error("No Cause");
-                cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
-            }
-        } else {
-            ogs_warn("GTP Failed [CAUSE:%d]", cause_value);
-        }
-    } else {
-        ogs_error("No Cause");
+    if (rsp->bearer_contexts.cause.presence == 0) {
+        ogs_error("No Bearer Cause");
         cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
     }
 
@@ -532,6 +535,43 @@ void smf_s5c_handle_create_bearer_response(
                 OGS_GTP2_CAUSE_UNDEFINED_VALUE));
         return;
     }
+
+    /********************
+     * Check Cause Value
+     ********************/
+    ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
+
+    cause = rsp->bearer_contexts.cause.data;
+    ogs_assert(cause);
+    cause_value = cause->value;
+    if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+        ogs_error("GTP Failed [Bearer-CAUSE:%d]", cause_value);
+        ogs_assert(OGS_OK ==
+            smf_epc_pfcp_send_bearer_modification_request(
+                bearer, NULL, OGS_PFCP_MODIFY_REMOVE,
+                OGS_NAS_PROCEDURE_TRANSACTION_IDENTITY_UNASSIGNED,
+                OGS_GTP2_CAUSE_UNDEFINED_VALUE));
+        return;
+    }
+
+    cause = rsp->cause.data;
+    ogs_assert(cause);
+    cause_value = cause->value;
+    if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+        ogs_error("GTP Failed [CAUSE:%d]", cause_value);
+        ogs_assert(OGS_OK ==
+            smf_epc_pfcp_send_bearer_modification_request(
+                bearer, NULL, OGS_PFCP_MODIFY_REMOVE,
+                OGS_NAS_PROCEDURE_TRANSACTION_IDENTITY_UNASSIGNED,
+                OGS_GTP2_CAUSE_UNDEFINED_VALUE));
+        return;
+    }
+
+    /********************
+     * Check ALL Context
+     ********************/
+    ogs_assert(bearer);
+    ogs_assert(sess);
 
     /* Find the Bearer by PGW-S5U-TEID */
     ogs_assert(pgw_s5u_teid);
@@ -576,24 +616,45 @@ void smf_s5c_handle_update_bearer_response(
 {
     int rv;
     uint8_t cause_value;
+    ogs_gtp2_cause_t *cause = NULL;
     uint64_t gtp_flags = 0;
     uint64_t pfcp_flags = 0;
     smf_bearer_t *bearer = NULL;
 
-    ogs_assert(xact);
     ogs_assert(rsp);
-    gtp_flags = xact->update_flags;
-    ogs_assert(gtp_flags);
-
-    bearer = xact->data;
-    ogs_assert(bearer);
 
     ogs_debug("Update Bearer Response");
 
-    cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
+    /********************
+     * Check Transaction
+     ********************/
+    ogs_assert(xact);
+    gtp_flags = xact->update_flags;
+    ogs_assert(gtp_flags);
+    bearer = xact->data;
+    ogs_assert(bearer);
 
     rv = ogs_gtp_xact_commit(xact);
     ogs_expect(rv == OGS_OK);
+
+    /************************
+     * Check Session Context
+     ************************/
+    cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
+
+    if (!sess) {
+        ogs_error("No Context in TEID");
+        cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
+    }
+
+    if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+        return;
+    }
+
+    /*****************************************
+     * Check Mandatory/Conditional IE Missing
+     *****************************************/
+    ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
 
     if (rsp->bearer_contexts.presence == 0) {
         ogs_error("No Bearer");
@@ -604,44 +665,48 @@ void smf_s5c_handle_update_bearer_response(
         cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
     }
 
-    if (!sess) {
-        ogs_error("No Context in TEID");
-
-        sess = bearer->sess;
-        ogs_assert(sess);
-
-        cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
-    }
-
-    if (rsp->cause.presence) {
-        ogs_gtp2_cause_t *cause = rsp->cause.data;
-        ogs_assert(cause);
-
-        cause_value = cause->value;
-        if (cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
-            if (rsp->bearer_contexts.cause.presence) {
-                cause = rsp->bearer_contexts.cause.data;
-                ogs_assert(cause);
-
-                cause_value = cause->value;
-            } else {
-                ogs_error("No Cause");
-                cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
-            }
-        } else {
-            ogs_warn("GTP Failed [CAUSE:%d]", cause_value);
-        }
-    } else {
+    if (rsp->cause.presence == 0) {
         ogs_error("No Cause");
         cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
     }
-
-    ogs_debug("    SGW_S5C_TEID[0x%x] SMF_N4_TEID[0x%x]",
-            sess->sgw_s5c_teid, sess->smf_n4_teid);
+    if (rsp->bearer_contexts.cause.presence == 0) {
+        ogs_error("No Bearer Cause");
+        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
+    }
 
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
         return;
     }
+
+    /********************
+     * Check Cause Value
+     ********************/
+    ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
+
+    cause = rsp->bearer_contexts.cause.data;
+    ogs_assert(cause);
+    cause_value = cause->value;
+    if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+        ogs_error("GTP Failed [Bearer-CAUSE:%d]", cause_value);
+        return;
+    }
+
+    cause = rsp->cause.data;
+    ogs_assert(cause);
+    cause_value = cause->value;
+    if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+        ogs_error("GTP Failed [CAUSE:%d]", cause_value);
+        return;
+    }
+
+    /********************
+     * Check ALL Context
+     ********************/
+    ogs_assert(sess);
+    ogs_assert(bearer);
+
+    ogs_debug("    SGW_S5C_TEID[0x%x] SMF_N4_TEID[0x%x]",
+            sess->sgw_s5c_teid, sess->smf_n4_teid);
 
     ogs_debug("Update Bearer Response : SGW[0x%x] --> SMF[0x%x]",
             sess->sgw_s5c_teid, sess->smf_n4_teid);
@@ -672,27 +737,32 @@ void smf_s5c_handle_delete_bearer_response(
     uint8_t cause_value;
     smf_bearer_t *bearer = NULL;
 
-    ogs_assert(xact);
     ogs_assert(rsp);
 
     ogs_debug("Delete Bearer Response");
 
-    cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
-
+    /********************
+     * Check Transaction
+     ********************/
+    ogs_assert(xact);
     bearer = xact->data;
     ogs_assert(bearer);
 
     rv = ogs_gtp_xact_commit(xact);
     ogs_expect(rv == OGS_OK);
 
-    if (!sess) {
+    /************************
+     * Check Session Context
+     ************************/
+    if (!sess)
         ogs_error("No Context in TEID");
 
-        sess = bearer->sess;
-        ogs_assert(sess);
-
-        cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
-    }
+    /********************
+     * Check ALL Context
+     ********************/
+    ogs_assert(bearer);
+    sess = bearer->sess;
+    ogs_assert(sess);
 
     if (rsp->linked_eps_bearer_id.presence) {
         /*
@@ -715,7 +785,6 @@ void smf_s5c_handle_delete_bearer_response(
             }
         } else {
             ogs_error("No Cause");
-            cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
         }
 
         ogs_assert(OGS_OK ==
@@ -755,14 +824,12 @@ void smf_s5c_handle_delete_bearer_response(
                     cause_value = cause->value;
                 } else {
                     ogs_error("No Cause");
-                    cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
                 }
             } else {
                 ogs_warn("GTP Failed [CAUSE:%d]", cause_value);
             }
         } else {
             ogs_error("No Cause");
-            cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
         }
 
         ogs_debug("    SGW_S5C_TEID[0x%x] SMF_N4_TEID[0x%x]",
