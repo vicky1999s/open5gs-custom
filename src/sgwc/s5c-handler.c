@@ -132,23 +132,10 @@ void sgwc_s5c_handle_create_session_response(
         return;
     }
 
-    /****************************
-     * Check Manatory IE Missing
-     ****************************/
+    /****************************************
+     * Check Manatory/Conditional IE Missing
+     ****************************************/
     ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
-
-    if (rsp->bearer_contexts_created.cause.presence == 0) {
-        ogs_error("No EPS Bearer Cause");
-        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
-    }
-    if (rsp->bearer_contexts_created.presence == 0) {
-        ogs_error("No Bearer");
-        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
-    }
-    if (rsp->bearer_contexts_created.eps_bearer_id.presence == 0) {
-        ogs_error("No EPS Bearer ID");
-        ogs_assert_if_reached();
-    }
 
     if (rsp->pgw_s5_s8__s2a_s2b_f_teid_for_pmip_based_interface_or_for_gtp_based_control_plane_interface.presence == 0) {
         ogs_error("No GTP TEID");
@@ -163,7 +150,6 @@ void sgwc_s5c_handle_create_session_response(
         ogs_error("No Cause");
         cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
     }
-
     if (rsp->bearer_contexts_created.cause.presence == 0) {
         ogs_error("No Bearer Cause");
         cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
@@ -318,9 +304,9 @@ void sgwc_s5c_handle_delete_session_response(
         return;
     }
 
-    /****************************
-     * Check Manatory IE Missing
-     ****************************/
+    /****************************************
+     * Check Manatory/Conditional IE Missing
+     ****************************************/
     ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
 
     if (rsp->cause.presence == 0) {
@@ -414,9 +400,9 @@ void sgwc_s5c_handle_modify_bearer_response(
         return;
     }
 
-    /****************************
-     * Check Manatory IE Missing
-     ****************************/
+    /****************************************
+     * Check Manatory/Conditional IE Missing
+     ****************************************/
     ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
 
     if (rsp->cause.presence == 0) {
