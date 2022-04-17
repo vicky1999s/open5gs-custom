@@ -275,6 +275,7 @@ void sgwc_s5c_handle_delete_session_response(
         ogs_pkbuf_t *gtpbuf, ogs_gtp2_message_t *message)
 {
     int rv;
+    ogs_gtp2_cause_t *cause = NULL;
     uint8_t cause_value;
 
     sgwc_ue_t *sgwc_ue = NULL;
@@ -291,12 +292,17 @@ void sgwc_s5c_handle_delete_session_response(
 
     ogs_debug("Delete Session Response");
 
+    /************************
+     * Check Session Context
+     ************************/
     cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
 
     if (!sess) {
         ogs_warn("No Context in TEID");
         sess = s5c_xact->data;
         ogs_assert(sess);
+
+        cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
     }
 
     rv = ogs_gtp_xact_commit(s5c_xact);
@@ -305,18 +311,44 @@ void sgwc_s5c_handle_delete_session_response(
     sgwc_ue = sess->sgwc_ue;
     ogs_assert(sgwc_ue);
 
-    if (rsp->cause.presence) {
-        ogs_gtp2_cause_t *cause = rsp->cause.data;
-        ogs_assert(cause);
+    if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+        ogs_gtp_send_error_message(
+                s11_xact, sgwc_ue ? sgwc_ue->mme_s11_teid : 0,
+                OGS_GTP2_DELETE_SESSION_RESPONSE_TYPE, cause_value);
+        return;
+    }
 
-        cause_value = cause->value;
-    } else {
+    /****************************
+     * Check Manatory IE Missing
+     ****************************/
+    ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
+
+    if (rsp->cause.presence == 0) {
         ogs_error("No Cause");
         cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
     }
 
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
-        ogs_warn("GTP Failed [CAUSE:%d]", cause_value);
+        ogs_gtp_send_error_message(
+                s11_xact, sgwc_ue ? sgwc_ue->mme_s11_teid : 0,
+                OGS_GTP2_DELETE_SESSION_RESPONSE_TYPE, cause_value);
+        return;
+    }
+
+    /********************
+     * Check Cause Value
+     ********************/
+    ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
+
+    cause = rsp->cause.data;
+    ogs_assert(cause);
+    cause_value = cause->value;
+    if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+        ogs_error("GTP Failed [CAUSE:%d]", cause_value);
+        ogs_gtp_send_error_message(
+                s11_xact, sgwc_ue ? sgwc_ue->mme_s11_teid : 0,
+                OGS_GTP2_DELETE_SESSION_RESPONSE_TYPE, cause_value);
+        return;
     }
 
     /* Remove a pgw session */
@@ -338,6 +370,7 @@ void sgwc_s5c_handle_modify_bearer_response(
         ogs_pkbuf_t *gtpbuf, ogs_gtp2_message_t *message)
 {
     int rv;
+    ogs_gtp2_cause_t *cause = NULL;
     uint8_t cause_value;
 
     sgwc_ue_t *sgwc_ue = NULL;
@@ -355,12 +388,17 @@ void sgwc_s5c_handle_modify_bearer_response(
 
     ogs_debug("Modify Bearer Response");
 
+    /************************
+     * Check Session Context
+     ************************/
     cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
 
     if (!sess) {
         ogs_warn("No Context in TEID");
         sess = s5c_xact->data;
         ogs_assert(sess);
+
+        cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
     }
 
     rv = ogs_gtp_xact_commit(s5c_xact);
@@ -369,17 +407,40 @@ void sgwc_s5c_handle_modify_bearer_response(
     sgwc_ue = sess->sgwc_ue;
     ogs_assert(sgwc_ue);
 
-    if (rsp->cause.presence) {
-        ogs_gtp2_cause_t *cause = rsp->cause.data;
-        ogs_assert(cause);
+    if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+        ogs_gtp_send_error_message(
+                s11_xact, sgwc_ue ? sgwc_ue->mme_s11_teid : 0,
+                OGS_GTP2_MODIFY_BEARER_RESPONSE_TYPE, cause_value);
+        return;
+    }
 
-        cause_value = cause->value;
-    } else {
+    /****************************
+     * Check Manatory IE Missing
+     ****************************/
+    ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
+
+    if (rsp->cause.presence == 0) {
         ogs_error("No Cause");
         cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
     }
 
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+        ogs_gtp_send_error_message(
+                s11_xact, sgwc_ue ? sgwc_ue->mme_s11_teid : 0,
+                OGS_GTP2_MODIFY_BEARER_RESPONSE_TYPE, cause_value);
+        return;
+    }
+
+    /********************
+     * Check Cause Value
+     ********************/
+    ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
+
+    cause = rsp->cause.data;
+    ogs_assert(cause);
+    cause_value = cause->value;
+    if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+        ogs_error("GTP Failed [CAUSE:%d]", cause_value);
         ogs_gtp_send_error_message(
                 s11_xact, sgwc_ue ? sgwc_ue->mme_s11_teid : 0,
                 OGS_GTP2_MODIFY_BEARER_RESPONSE_TYPE, cause_value);
