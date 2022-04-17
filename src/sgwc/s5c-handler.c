@@ -94,9 +94,6 @@ void sgwc_s5c_handle_create_session_response(
 
     if (!sess) {
         ogs_error("No Context in TEID");
-        sess = s5c_xact->data;
-        ogs_assert(sess);
-
         cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
     } else {
         sgwc_ue = sess->sgwc_ue;
@@ -289,9 +286,6 @@ void sgwc_s5c_handle_delete_session_response(
 
     if (!sess) {
         ogs_error("No Context in TEID");
-        sess = s5c_xact->data;
-        ogs_assert(sess);
-
         cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
     } else {
         sgwc_ue = sess->sgwc_ue;
@@ -391,9 +385,6 @@ void sgwc_s5c_handle_modify_bearer_response(
 
     if (!sess) {
         ogs_error("No Context in TEID");
-        sess = s5c_xact->data;
-        ogs_assert(sess);
-
         cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
     } else {
         sgwc_ue = sess->sgwc_ue;

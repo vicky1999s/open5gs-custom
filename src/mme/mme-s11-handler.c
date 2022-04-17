@@ -234,6 +234,9 @@ void mme_s11_handle_create_session_response(
         return;
     }
 
+    /********************
+     * Check ALL Context
+     ********************/
     ogs_assert(bearer);
     sess = bearer->sess;
     ogs_assert(sess);
