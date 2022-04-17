@@ -137,15 +137,6 @@ void sgwc_s5c_handle_create_session_response(
      ****************************************/
     ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
 
-    if (rsp->pgw_s5_s8__s2a_s2b_f_teid_for_pmip_based_interface_or_for_gtp_based_control_plane_interface.presence == 0) {
-        ogs_error("No GTP TEID");
-        cause_value = OGS_GTP2_CAUSE_CONDITIONAL_IE_MISSING;
-    }
-    if (rsp->bearer_contexts_created.s5_s8_u_sgw_f_teid.presence == 0) {
-        ogs_error("No GTP TEID");
-        cause_value = OGS_GTP2_CAUSE_CONDITIONAL_IE_MISSING;
-    }
-
     if (rsp->cause.presence == 0) {
         ogs_error("No Cause");
         cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
@@ -155,6 +146,14 @@ void sgwc_s5c_handle_create_session_response(
         cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
     }
 
+    if (rsp->pgw_s5_s8__s2a_s2b_f_teid_for_pmip_based_interface_or_for_gtp_based_control_plane_interface.presence == 0) {
+        ogs_error("No GTP TEID");
+        cause_value = OGS_GTP2_CAUSE_CONDITIONAL_IE_MISSING;
+    }
+    if (rsp->bearer_contexts_created.s5_s8_u_sgw_f_teid.presence == 0) {
+        ogs_error("No GTP TEID");
+        cause_value = OGS_GTP2_CAUSE_CONDITIONAL_IE_MISSING;
+    }
     if (rsp->pdn_address_allocation.presence) {
         ogs_paa_t paa;
 
