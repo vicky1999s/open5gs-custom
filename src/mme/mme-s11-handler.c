@@ -964,7 +964,7 @@ void mme_s11_handle_delete_bearer_request(
 }
 
 void mme_s11_handle_release_access_bearers_response(
-        ogs_gtp_xact_t *xact, mme_ue_t *mme_ue_from_teid,
+        ogs_gtp_xact_t *xact, sgw_ue_t *sgw_ue,
         ogs_gtp2_release_access_bearers_response_t *rsp)
 {
     int rv;
@@ -973,7 +973,6 @@ void mme_s11_handle_release_access_bearers_response(
     enb_ue_t *enb_ue = NULL;
 
     mme_ue_t *mme_ue = NULL;;
-    sgw_ue_t *sgw_ue = NULL;
     mme_sess_t *sess = NULL;
     mme_bearer_t *bearer = NULL;
 
@@ -996,12 +995,8 @@ void mme_s11_handle_release_access_bearers_response(
     /***********************
      * Check SGW-UE Context
      ***********************/
-    if (!mme_ue_from_teid) {
+    if (!sgw_ue)
         ogs_error("No Context in TEID");
-    } else {
-        sgw_ue = mme_ue->sgw_ue;
-        ogs_assert(sgw_ue);
-    }
 
     /********************
      * Check Cause Value
@@ -1261,14 +1256,13 @@ void mme_s11_handle_downlink_data_notification(
 }
 
 void mme_s11_handle_create_indirect_data_forwarding_tunnel_response(
-        ogs_gtp_xact_t *xact, mme_ue_t *mme_ue_from_teid,
+        ogs_gtp_xact_t *xact, sgw_ue_t *sgw_ue,
         ogs_gtp2_create_indirect_data_forwarding_tunnel_response_t *rsp)
 {
     int rv;
     uint8_t cause_value = 0;
     ogs_gtp2_cause_t *cause = NULL;
     mme_ue_t *mme_ue = NULL;
-    sgw_ue_t *sgw_ue = NULL;
     mme_bearer_t *bearer = NULL;
     enb_ue_t *source_ue = NULL;
     int i;
@@ -1294,12 +1288,9 @@ void mme_s11_handle_create_indirect_data_forwarding_tunnel_response(
      ************************/
     cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
 
-    if (!mme_ue_from_teid) {
+    if (!sgw_ue) {
         ogs_error("No Context in TEID");
         cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
-    } else {
-        sgw_ue = mme_ue->sgw_ue;
-        ogs_assert(sgw_ue);
     }
 
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
@@ -1380,15 +1371,14 @@ void mme_s11_handle_create_indirect_data_forwarding_tunnel_response(
 }
 
 void mme_s11_handle_delete_indirect_data_forwarding_tunnel_response(
-        ogs_gtp_xact_t *xact, mme_ue_t *mme_ue_from_teid,
+        ogs_gtp_xact_t *xact, sgw_ue_t *sgw_ue,
         ogs_gtp2_delete_indirect_data_forwarding_tunnel_response_t *rsp)
 {
     int rv;
     uint8_t cause_value = 0;
     ogs_gtp2_cause_t *cause = NULL;
     int action = 0;
-    mme_ue_t *mme_ue = mme_ue_from_teid;
-    sgw_ue_t *sgw_ue = NULL;
+    mme_ue_t *mme_ue = NULL;
 
     ogs_assert(rsp);
 
@@ -1411,12 +1401,9 @@ void mme_s11_handle_delete_indirect_data_forwarding_tunnel_response(
      ************************/
     cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
 
-    if (!mme_ue_from_teid) {
+    if (!sgw_ue) {
         ogs_error("No Context in TEID");
         cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
-    } else {
-        sgw_ue = mme_ue->sgw_ue;
-        ogs_assert(sgw_ue);
     }
 
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
@@ -1476,7 +1463,7 @@ void mme_s11_handle_delete_indirect_data_forwarding_tunnel_response(
 }
 
 void mme_s11_handle_bearer_resource_failure_indication(
-        ogs_gtp_xact_t *xact, mme_ue_t *mme_ue_from_teid,
+        ogs_gtp_xact_t *xact, sgw_ue_t *sgw_ue,
         ogs_gtp2_bearer_resource_failure_indication_t *ind)
 {
     int rv;
@@ -1485,7 +1472,6 @@ void mme_s11_handle_bearer_resource_failure_indication(
     mme_bearer_t *bearer = NULL;
     mme_sess_t *sess = NULL;
     mme_ue_t *mme_ue = NULL;
-    sgw_ue_t *sgw_ue = NULL;
 
     ogs_debug("Bearer Resource Failure Indication");
 
@@ -1503,12 +1489,8 @@ void mme_s11_handle_bearer_resource_failure_indication(
     rv = ogs_gtp_xact_commit(xact);
     ogs_expect_or_return(rv == OGS_OK);
 
-    if (!mme_ue_from_teid) {
+    if (!sgw_ue)
         ogs_error("No Context in TEID");
-    } else {
-        sgw_ue = mme_ue->sgw_ue;
-        ogs_assert(sgw_ue);
-    }
 
     /********************
      * Check Cause Value
@@ -1536,7 +1518,7 @@ void mme_s11_handle_bearer_resource_failure_indication(
         nas_eps_send_bearer_resource_modification_reject(
             mme_ue, sess->pti, esm_cause_from_gtp(cause_value)));
 
-    if (!mme_ue_from_teid ||
+    if (!sgw_ue ||
         cause_value == OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND) {
         ogs_error("No Bearer");
         mme_bearer_remove(bearer);

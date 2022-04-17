@@ -50,20 +50,20 @@ void mme_s11_handle_delete_bearer_request(
         ogs_gtp2_delete_bearer_request_t *rsp);
 
 void mme_s11_handle_release_access_bearers_response(
-        ogs_gtp_xact_t *xact, mme_ue_t *mme_ue,
+        ogs_gtp_xact_t *xact, sgw_ue_t *sgw_ue,
         ogs_gtp2_release_access_bearers_response_t *rsp);
 void mme_s11_handle_downlink_data_notification(
         ogs_gtp_xact_t *xact, mme_ue_t *mme_ue,
         ogs_gtp2_downlink_data_notification_t *noti);
 void mme_s11_handle_create_indirect_data_forwarding_tunnel_response(
-        ogs_gtp_xact_t *xact, mme_ue_t *mme_ue,
+        ogs_gtp_xact_t *xact, sgw_ue_t *sgw_ue,
         ogs_gtp2_create_indirect_data_forwarding_tunnel_response_t *rsp);
 void mme_s11_handle_delete_indirect_data_forwarding_tunnel_response(
-        ogs_gtp_xact_t *xact, mme_ue_t *mme_ue,
+        ogs_gtp_xact_t *xact, sgw_ue_t *sgw_ue,
         ogs_gtp2_delete_indirect_data_forwarding_tunnel_response_t *rsp);
 
 void mme_s11_handle_bearer_resource_failure_indication(
-        ogs_gtp_xact_t *xact, mme_ue_t *mme_ue,
+        ogs_gtp_xact_t *xact, sgw_ue_t *sgw_ue,
         ogs_gtp2_bearer_resource_failure_indication_t *ind);
 
 #ifdef __cplusplus

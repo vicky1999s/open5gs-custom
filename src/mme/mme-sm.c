@@ -604,7 +604,7 @@ void mme_state_operational(ogs_fsm_t *s, mme_event_t *e)
             break;
         case OGS_GTP2_RELEASE_ACCESS_BEARERS_RESPONSE_TYPE:
             mme_s11_handle_release_access_bearers_response(
-                xact, mme_ue, &gtp_message.release_access_bearers_response);
+                xact, sgw_ue, &gtp_message.release_access_bearers_response);
             break;
         case OGS_GTP2_DOWNLINK_DATA_NOTIFICATION_TYPE:
             if (!sgw_ue) {
@@ -620,17 +620,17 @@ void mme_state_operational(ogs_fsm_t *s, mme_event_t *e)
             break;
         case OGS_GTP2_CREATE_INDIRECT_DATA_FORWARDING_TUNNEL_RESPONSE_TYPE:
             mme_s11_handle_create_indirect_data_forwarding_tunnel_response(
-                xact, mme_ue,
+                xact, sgw_ue,
                 &gtp_message.create_indirect_data_forwarding_tunnel_response);
             break;
         case OGS_GTP2_DELETE_INDIRECT_DATA_FORWARDING_TUNNEL_RESPONSE_TYPE:
             mme_s11_handle_delete_indirect_data_forwarding_tunnel_response(
-                xact, mme_ue,
+                xact, sgw_ue,
                 &gtp_message.delete_indirect_data_forwarding_tunnel_response);
             break;
         case OGS_GTP2_BEARER_RESOURCE_FAILURE_INDICATION_TYPE:
             mme_s11_handle_bearer_resource_failure_indication(
-                xact, mme_ue,
+                xact, sgw_ue,
                 &gtp_message.bearer_resource_failure_indication);
             break;
         default:
