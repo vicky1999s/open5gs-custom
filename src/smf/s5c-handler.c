@@ -315,6 +315,9 @@ void smf_s5c_handle_delete_session_request(
     ogs_assert(xact);
     ogs_assert(req);
 
+    /************************
+     * Check Session Context
+     ************************/
     cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
 
     if (!sess) {
@@ -339,6 +342,11 @@ void smf_s5c_handle_delete_session_request(
                 OGS_GTP2_DELETE_SESSION_RESPONSE_TYPE, cause_value);
         return;
     }
+
+    /********************
+     * Check ALL Context
+     ********************/
+    ogs_assert(sess);
 
     ogs_debug("    SGW_S5C_TEID[0x%x] SMF_N4_TEID[0x%x]",
             sess->sgw_s5c_teid, sess->smf_n4_teid);
@@ -377,6 +385,9 @@ void smf_s5c_handle_modify_bearer_request(
     ogs_assert(xact);
     ogs_assert(req);
 
+    /************************
+     * Check Session Context
+     ************************/
     cause_value = OGS_GTP2_CAUSE_REQUEST_ACCEPTED;
 
     if (!sess) {
@@ -390,6 +401,9 @@ void smf_s5c_handle_modify_bearer_request(
         return;
     }
 
+    /********************
+     * Check ALL Context
+     ********************/
     ogs_assert(sess);
     smf_ue = sess->smf_ue;
     ogs_assert(smf_ue);
@@ -821,12 +835,15 @@ void smf_s5c_handle_delete_bearer_response(
                     cause = rsp->bearer_contexts.cause.data;
                     ogs_assert(cause);
 
-                    cause_value = cause->value;
+                    if (cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+                    } else {
+                        ogs_error("GTP Failed [CAUSE:%d]", cause_value);
+                    }
                 } else {
                     ogs_error("No Cause");
                 }
             } else {
-                ogs_warn("GTP Failed [CAUSE:%d]", cause_value);
+                ogs_error("GTP Failed [CAUSE:%d]", cause_value);
             }
         } else {
             ogs_error("No Cause");

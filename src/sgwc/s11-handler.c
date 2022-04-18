@@ -39,7 +39,7 @@ static void sess_timeout(ogs_gtp_xact_t *xact, void *data)
     case OGS_GTP2_DELETE_SESSION_REQUEST_TYPE:
         ogs_error("[%s] No Delete Session Response", sgwc_ue->imsi_bcd);
         if (!sgwc_sess_cycle(sess)) {
-            ogs_warn("[%s] Session has already been removed",
+            ogs_error("[%s] Session has already been removed",
                     sgwc_ue->imsi_bcd);
             break;
         }
@@ -476,11 +476,6 @@ void sgwc_s11_handle_delete_session_request(
                 ogs_error("Unknown EPS Bearer [IMSI:%s, EBI:%d]",
                         sgwc_ue->imsi_bcd, req->linked_eps_bearer_id.u8);
                 cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
-            } else {
-                if (!sess->gnode) {
-                    ogs_error("No GTP Node");
-                    cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
-                }
             }
         }
     }
@@ -635,20 +630,6 @@ void sgwc_s11_handle_create_bearer_response(
     ogs_assert(cause);
     cause_value = cause->value;
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
-        ogs_error("GTP Failed [Bearer-CAUSE:%d]", cause_value);
-        ogs_assert(OGS_OK ==
-            sgwc_pfcp_send_bearer_modification_request(
-                bearer, NULL, NULL,
-                OGS_PFCP_MODIFY_UL_ONLY|OGS_PFCP_MODIFY_REMOVE));
-        ogs_gtp_send_error_message(s5c_xact, sess ? sess->pgw_s5c_teid : 0,
-                OGS_GTP2_CREATE_BEARER_RESPONSE_TYPE, cause_value);
-        return;
-    }
-
-    cause = rsp->cause.data;
-    ogs_assert(cause);
-    cause_value = cause->value;
-    if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
         ogs_error("GTP Failed [CAUSE:%d]", cause_value);
         ogs_assert(OGS_OK ==
             sgwc_pfcp_send_bearer_modification_request(
@@ -658,6 +639,13 @@ void sgwc_s11_handle_create_bearer_response(
                 OGS_GTP2_CREATE_BEARER_RESPONSE_TYPE, cause_value);
         return;
     }
+
+    /********************
+     * Check ALL Context
+     ********************/
+    ogs_assert(sgwc_ue);
+    ogs_assert(sess);
+    ogs_assert(bearer);
 
     /* Correlate with SGW-S1U-TEID */
     sgw_s1u_teid = rsp->bearer_contexts.s4_u_sgsn_f_teid.data;
@@ -955,12 +943,15 @@ void sgwc_s11_handle_delete_bearer_response(
                     cause = rsp->bearer_contexts.cause.data;
                     ogs_assert(cause);
 
-                    cause_value = cause->value;
+                    if (cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
+                    } else {
+                        ogs_error("GTP Failed [CAUSE:%d]", cause_value);
+                    }
                 } else {
                     ogs_error("No Cause");
                 }
             } else {
-                ogs_warn("GTP Failed [CAUSE:%d]", cause_value);
+                ogs_error("GTP Failed [CAUSE:%d]", cause_value);
             }
         } else {
             ogs_error("No Cause");

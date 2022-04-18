@@ -157,19 +157,6 @@ void mme_s11_handle_create_session_response(
      *****************************************/
     ogs_assert(cause_value == OGS_GTP2_CAUSE_REQUEST_ACCEPTED);
 
-    if (rsp->cause.presence == 0) {
-        ogs_error("No Cause");
-        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
-    }
-    if (rsp->bearer_contexts_created.cause.presence == 0) {
-        ogs_error("No Bearer Cause");
-        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
-    }
-
-    if (rsp->pdn_address_allocation.presence == 0) {
-        ogs_error("No PDN Address Allocation");
-        cause_value = OGS_GTP2_CAUSE_CONDITIONAL_IE_MISSING;
-    }
     if (rsp->sender_f_teid_for_control_plane.presence == 0) {
         ogs_error("No S11 TEID");
         cause_value = OGS_GTP2_CAUSE_CONDITIONAL_IE_MISSING;
@@ -192,6 +179,15 @@ void mme_s11_handle_create_session_response(
     } else {
         ogs_error("No PDN Address Allocation");
         cause_value = OGS_GTP2_CAUSE_CONDITIONAL_IE_MISSING;
+    }
+
+    if (rsp->cause.presence == 0) {
+        ogs_error("No Cause");
+        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
+    }
+    if (rsp->bearer_contexts_created.cause.presence == 0) {
+        ogs_error("No Bearer Cause");
+        cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
     }
 
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
@@ -461,7 +457,7 @@ void mme_s11_handle_delete_session_response(
 
         cause_value = cause->value;
         if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED)
-            ogs_warn("GTP Failed [CAUSE:%d] - Ignored", cause_value);
+            ogs_error("GTP Failed [CAUSE:%d] - Ignored", cause_value);
     }
 
     /********************
@@ -512,7 +508,7 @@ void mme_s11_handle_delete_session_response(
                     S1AP_Cause_PR_nas, S1AP_CauseNas_normal_release,
                     S1AP_UE_CTX_REL_UE_CONTEXT_REMOVE, 0));
             } else
-                ogs_warn("ENB-S1 Context has already been removed");
+                ogs_error("ENB-S1 Context has already been removed");
         }
 
     } else if (action == OGS_GTP_DELETE_HANDLE_PDN_CONNECTIVITY_REQUEST) {
@@ -832,7 +828,7 @@ void mme_s11_handle_update_bearer_request(
                     req->bearer_contexts.tft.presence));
         }
     } else {
-        ogs_warn("[IGNORE] Update Bearer Request : "
+        ogs_error("[IGNORE] Update Bearer Request : "
                 "Both QoS and TFT is NULL");
 
         if (xact->xid & OGS_GTP_CMD_XACT_ID) {
@@ -1007,7 +1003,7 @@ void mme_s11_handle_release_access_bearers_response(
 
         cause_value = cause->value;
         if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED)
-            ogs_warn("GTP Failed [CAUSE:%d]", cause_value);
+            ogs_error("GTP Failed [CAUSE:%d]", cause_value);
     }
 
     /********************
@@ -1033,7 +1029,7 @@ void mme_s11_handle_release_access_bearers_response(
                     S1AP_Cause_PR_nas, S1AP_CauseNas_normal_release,
                     S1AP_UE_CTX_REL_S1_REMOVE_AND_UNLINK, 0));
         } else {
-            ogs_warn("ENB-S1 Context has already been removed");
+            ogs_error("ENB-S1 Context has already been removed");
         }
     } else if (action == OGS_GTP_RELEASE_S1_CONTEXT_REMOVE_BY_LO_CONNREFUSED) {
         enb_ue = enb_ue_cycle(mme_ue->enb_ue);
@@ -1043,7 +1039,7 @@ void mme_s11_handle_release_access_bearers_response(
         if (enb_ue) {
             enb_ue_remove(enb_ue);
         } else {
-            ogs_warn("ENB-S1 Context has already been removed");
+            ogs_error("ENB-S1 Context has already been removed");
         }
 
     /*
@@ -1074,7 +1070,7 @@ void mme_s11_handle_release_access_bearers_response(
                 ogs_assert(OGS_OK ==
                     s1ap_send_s1_reset_ack(enb, NULL));
         } else {
-            ogs_warn("ENB-S1 Context has already been removed");
+            ogs_error("ENB-S1 Context has already been removed");
         }
 
     } else if (action == OGS_GTP_RELEASE_S1_CONTEXT_REMOVE_BY_RESET_PARTIAL) {
@@ -1108,7 +1104,7 @@ void mme_s11_handle_release_access_bearers_response(
             /* Clear S1-Reset Ack Buffer */
             enb->s1_reset_ack = NULL;
         } else {
-            ogs_warn("ENB-S1 Context has already been removed");
+            ogs_error("ENB-S1 Context has already been removed");
         }
 
     } else {

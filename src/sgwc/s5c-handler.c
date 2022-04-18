@@ -45,7 +45,7 @@ static void bearer_timeout(ogs_gtp_xact_t *xact, void *data)
     case OGS_GTP2_DELETE_BEARER_REQUEST_TYPE:
         ogs_error("[%s] No Delete Bearer Response", sgwc_ue->imsi_bcd);
         if (!sgwc_bearer_cycle(bearer)) {
-            ogs_warn("[%s] Bearer has already been removed", sgwc_ue->imsi_bcd);
+            ogs_error("[%s] Bearer has already been removed", sgwc_ue->imsi_bcd);
             break;
         }
         ogs_assert(OGS_OK ==
@@ -154,7 +154,7 @@ void sgwc_s5c_handle_create_session_response(
 
         if (!OGS_PDU_SESSION_TYPE_IS_VALID(paa.session_type)) {
             ogs_error("Unknown PDN Type %u", paa.session_type);
-            cause_value = OGS_GTP2_CAUSE_CONDITIONAL_IE_MISSING;
+            cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_INCORRECT;
         }
 
     } else {
@@ -504,6 +504,9 @@ void sgwc_s5c_handle_create_bearer_request(
     if (!sess) {
         ogs_error("No Context in TEID");
         cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
+    } else {
+        sgwc_ue = sess->sgwc_ue;
+        ogs_assert(sgwc_ue);
     }
 
     if (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED) {
@@ -544,7 +547,6 @@ void sgwc_s5c_handle_create_bearer_request(
      * Check ALL Context
      ********************/
     ogs_assert(sess);
-    sgwc_ue = sess->sgwc_ue;
     ogs_assert(sgwc_ue);
 
     bearer = sgwc_bearer_add(sess);
@@ -620,6 +622,9 @@ void sgwc_s5c_handle_update_bearer_request(
         ogs_error("No Context in TEID");
         cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
     } else {
+        sgwc_ue = sess->sgwc_ue;
+        ogs_assert(sgwc_ue);
+
         if (req->bearer_contexts.presence == 0) {
             ogs_error("No Bearer");
             cause_value = OGS_GTP2_CAUSE_MANDATORY_IE_MISSING;
@@ -651,7 +656,6 @@ void sgwc_s5c_handle_update_bearer_request(
      ********************/
     ogs_assert(sess);
     ogs_assert(bearer);
-    sgwc_ue = sess->sgwc_ue;
     ogs_assert(sgwc_ue);
     ogs_assert(sgwc_ue->gnode);
 
@@ -717,6 +721,9 @@ void sgwc_s5c_handle_delete_bearer_request(
         ogs_error("No Context in TEID");
         cause_value = OGS_GTP2_CAUSE_CONTEXT_NOT_FOUND;
     } else {
+        sgwc_ue = sess->sgwc_ue;
+        ogs_assert(sgwc_ue);
+
         if (req->linked_eps_bearer_id.presence == 0 &&
             req->eps_bearer_ids.presence == 0) {
             ogs_error("No Linked EBI or EPS Bearer ID");
@@ -779,7 +786,6 @@ void sgwc_s5c_handle_delete_bearer_request(
      ********************/
     ogs_assert(sess);
     ogs_assert(bearer);
-    sgwc_ue = sess->sgwc_ue;
     ogs_assert(sgwc_ue);
     ogs_assert(sgwc_ue->gnode);
 
